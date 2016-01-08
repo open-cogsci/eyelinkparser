@@ -22,6 +22,8 @@ import sys
 import shlex
 import os
 from datamatrix import DataMatrix, SeriesColumn, cached
+from datamatrix.py3compat import *
+import numpy as np
 
 class EyeLinkParser(object):
 
@@ -106,7 +108,7 @@ class EyeLinkParser(object):
 
 	def parse_phase(self, l):
 
-		# MSG	6739802 start_phase match_stim
+		# MSG	[timestamp] start_phase [name]
 		if len(l) == 4 and l[0] == u'MSG' and l[2] == u'start_phase':
 			assert(self.current_phase is None)
 			assert(self.current_phase not in self.trialdm)
@@ -115,7 +117,7 @@ class EyeLinkParser(object):
 			self.xtrace = []
 			self.ytrace = []
 			return
-		# MSG	6739902 end_phase match_stim
+		# MSG	[timestamp] end_phase [name]
 		if len(l) == 4 and l[0] == u'MSG' and l[2] == u'end_phase':
 			assert(self.current_phase == l[3])
 			for prefix, trace in [
@@ -213,19 +215,21 @@ class EyeLinkParser(object):
 	def to_sample(self, l):
 
 		"""
-		Attempts to parse a line (in list format) into a dictionary of sample
-		information. The expected format is:
+		desc:
+			Attempts to parse a line (in list format) into a dictionary of
+			sample information. Samples with missing data are not matched.
+			The expected format is:
 
-			# Timestamp x y pupil size ...
-			4815155   168.2   406.5  2141.0 ...
+				# Timestamp x y pupil size ...
+				4815155   168.2   406.5  2141.0 ...
 
-		or (during blinks):
+			or (during blinks):
 
-			661781	   .	   .	    0.0	...
+				661781	   .	   .	    0.0	...
 
-		or (elaborate format):
+			or (elaborate format):
 
-			548367    514.0   354.5  1340.0 ...      -619.0  -161.0    88.9 ...CFT..R.BLR
+				548367    514.0   354.5  1340.0 ...      -619.0  -161.0    88.9 ...CFT..R.BLR
 
 		Arguments:
 		l -- a list
@@ -235,26 +239,20 @@ class EyeLinkParser(object):
 		following keys: 'x', 'y', 'time'.
 		"""
 
-		if len(l) not in (5, 9):
-			return None
-		try:
-			sample = {}
-			sample["time"] = l[0]
-			if l[1] == '.':
-				sample['x'] = np.nan
-			else:
-				sample["x"] = l[1]
-			if l[2] == '.':
-				sample["y"] = np.nan
-			else:
-				sample["y"] = l[2]
-			if l[3] == 0:
-				sample['pupil_size'] = np.nan
-			else:
-				sample['pupil_size'] = l[3]
-			return sample
-		except:
-			return None
+		if len(l) not in (5, 9) or isinstance(l[0], basestring):
+			return
+		sample = {}
+		sample["time"] = l[0]
+		if isinstance(l[0], basestring):
+			return
+		sample["x"] = l[1]
+		if isinstance(l[1], basestring):
+			return
+		sample["y"] = l[2]
+		if l[3] == 0 or isinstance(l[3], basestring):
+			return
+		sample['pupil_size'] = l[3]
+		return sample
 
 	def to_fixation(self, l):
 
