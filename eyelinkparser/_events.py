@@ -38,6 +38,7 @@ class Fixation(Event):
 	desc:
 		Format (short):
 		EFIX R   1651574	1654007	2434	  653.3	  557.8	   4710
+		EFIX R   299705		299872	168	  	509.0	  341.1	   2024
 		Format (long):
 		TODO
 	"""
@@ -122,7 +123,7 @@ class Saccade(Event):
 def event(l, cls):
 
 	try:
-		return Sample(l)
+		return cls(l)
 	except TypeError:
 		pass
 	except Exception as e:

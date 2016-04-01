@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import math
 import sys
 import shlex
 import os
@@ -32,7 +33,7 @@ class EyeLinkParser(object):
 	def __init__(self, folder=u'data', ext=u'.asc'):
 
 		self.dm = DataMatrix()
-		for fname in os.listdir(folder):
+		for fname in sorted(os.listdir(folder)):
 			if not fname.endswith(ext):
 				continue
 			path = os.path.join(folder, fname)
@@ -99,6 +100,11 @@ class EyeLinkParser(object):
 			self.parse_variable(l)
 			self.parse_phase(l)
 			self.parse_line(l)
+		if self.current_phase is not None:
+			warnings.warn(
+				u'Trial ended while phase "%s" was still ongoing' \
+				% self.current_phase)
+			self.end_phase()
 		self.on_end_trial()
 		return self.trialdm
 
@@ -133,7 +139,8 @@ class EyeLinkParser(object):
 			(u'ytrace_', self.ytrace),
 			]:
 				colname = prefix + self.current_phase
-				self.trialdm[colname] = SeriesColumn(len(trace))
+				self.trialdm[colname] = SeriesColumn(
+					len(trace), defaultnan=True)
 				self.trialdm[colname][0] = trace
 		self.current_phase = None
 
@@ -187,8 +194,9 @@ class EyeLinkParser(object):
 				try:
 					# Make sure we don't convert 'inf' and 'nan' strings to
 					# float
-					assert(not math.isinf(float(value)))
-					assert(not math.isnan(float(value)))
+					assert(not math.isinf(float(s)))
+					assert(not math.isnan(float(s)))
+					l.append(float(s))
 				except:
 					l.append(s)
 		return l
