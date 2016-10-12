@@ -28,11 +28,41 @@ import numpy as np
 import numbers
 import warnings
 
+ANY_VALUE = int, float, basestring
+
+
 class EyeLinkParser(object):
 
-	def __init__(self, folder=u'data', ext=u'.asc'):
+	def __init__(self, folder=u'data', ext=u'.asc', downsample=None,
+		maxtracelen=None):
+		
+		"""
+		desc:
+			Constructor.
+			
+		keywords:
+			data:
+				type:	str
+				desc:	The folder containing data files
+			ext:
+				type:	str
+				desc:	The data-file extension
+			downsample:
+				type:	[int, None]
+				desc:	Indicates whether traces (if any) should be downsampled.
+						For example, a value of 10 means a sample is retained
+						at most once every 10 ms (but less if the sampling
+						rate). is less to begin with.
+			maxtracelen:
+				type:	[int, None]
+				desc:	A maximum length for traces. Longer traces are truncated
+						and a UserWarning is emitted.
+		"""
 
 		self.dm = DataMatrix()
+		self._downsample = downsample
+		self._lastsampletime = None
+		self._maxtracelen = maxtracelen
 		for fname in sorted(os.listdir(folder)):
 			if not fname.endswith(ext):
 				continue
@@ -63,6 +93,28 @@ class EyeLinkParser(object):
 		pass
 
 	# Internal functions
+	
+	def match(self, l, *ref):
+		
+		if len(l) != len(ref):
+			return False
+		for i1, i2 in zip(l, ref):
+			# Literal match
+			if i1 == i2:
+				continue
+			# Set match
+			if isinstance(i2, tuple) and i1 in i2:
+				continue
+			# Direct instance match
+			if isinstance(i2, type) and isinstance(i1, i2):
+				continue
+			# Set instance match
+			if isinstance(i2, tuple) \
+				and [t for t in i2 if isinstance(t, type)] \
+				and isinstance(i1, i2):
+					continue
+			return False
+		return True		
 
 	def print_(self, s):
 
@@ -111,12 +163,13 @@ class EyeLinkParser(object):
 	def parse_variable(self, l):
 
 		# MSG	6740629 var rt 805
-		if len(l) == 5 and l[0] == u'MSG' and l[2] == u'var':
-			var = l[3]
-			val = l[4]
-			if var in self.trialdm:
-				warnings.warn(u'Variable "%s" defined twice in one trial' % var)
-			self.trialdm[var] = val
+		if not self.match(l, u'MSG', int, u'var', basestring, ANY_VALUE):
+			return
+		var = l[3]
+		val = l[4]
+		if var in self.trialdm:
+			warnings.warn(u'Variable "%s" defined twice in one trial' % var)
+		self.trialdm[var] = val
 
 	def start_phase(self, l):
 
@@ -126,10 +179,12 @@ class EyeLinkParser(object):
 				% (l[3], self.current_phase))
 			self.end_phase()
 		self.current_phase = l[3]
-		assert(self.current_phase not in self.trialdm)
+		if self.current_phase in self.trialdm:
+			raise Exception('Phase %s occurs twice' % self.current_phase)
 		self.ptrace = []
 		self.xtrace = []
 		self.ytrace = []
+		self.ttrace = []
 
 	def end_phase(self):
 
@@ -137,31 +192,41 @@ class EyeLinkParser(object):
 			(u'ptrace_', self.ptrace),
 			(u'xtrace_', self.xtrace),
 			(u'ytrace_', self.ytrace),
+			(u'ttrace_', self.ttrace)
 			]:
+				if self._maxtracelen is not None \
+					and len(trace) > self._maxtracelen:
+						warnings.warn(u'Trace %s is too long (%d samples)' \
+							% (self.current_phase, len(trace)))
+						trace = trace[:self._maxtracelen]
 				colname = prefix + self.current_phase
 				self.trialdm[colname] = SeriesColumn(
 					len(trace), defaultnan=True)
 				self.trialdm[colname][0] = trace
+				# Start the time trace at 0
+				if trace and prefix == u'ttrace_':
+					self.trialdm[colname][0] -= self.trialdm[colname][0][0]
 		self.current_phase = None
 
 	def parse_phase(self, l):
 
-		# MSG	[timestamp] start_phase [name]
-		if len(l) == 4 and l[0] == u'MSG' \
-			and l[2] in (u'start_phase', u'phase'):
-				self.start_phase(l)
-				return
-		# MSG	[timestamp] end_phase [name]
-		if len(l) == 4 and l[0] == u'MSG' \
-			and l[2] in (u'end_phase', u'stop_phase'):
-				assert(self.current_phase == l[3])
-				self.end_phase()
-				return
+		if self.match(l, u'MSG', int, (u'start_phase', u'phase'), basestring):
+			self.start_phase(l)
+			return
+		if self.match(l, u'MSG', int, (u'end_phase', u'stop_phase'), basestring):
+			assert(self.current_phase == l[3])
+			self.end_phase()
+			return
 		if self.current_phase is None:
 			return
 		s = sample(l)
 		if s is None:
 			return
+		if self._downsample is not None and self._lastsampletime is not None \
+			and s.t	- self._lastsampletime < self._downsample:
+				return
+		self._lastsampletime = s.t
+		self.ttrace.append(s.t)
 		self.ptrace.append(s.pupil_size)
 		self.xtrace.append(s.x)
 		self.ytrace.append(s.y)
@@ -169,7 +234,7 @@ class EyeLinkParser(object):
 	def is_start_trial(self, l):
 
 		# MSG	6735155 start_trial 1
-		if len(l) == 4 and l[0] == u'MSG' and l[2] == u'start_trial':
+		if self.match(l, u'MSG', int, u'start_trial', ANY_VALUE):
 			self.trialid = l[3]
 			self.current_phase = None
 			return True
@@ -178,10 +243,9 @@ class EyeLinkParser(object):
 	def is_end_trial(self, l):
 
 		# MSG	6740629 end_trial
-		if len(l) == 3 and l[0] == u'MSG' \
-			and l[2] in (u'end_trial', u'stop_trial'):
-				self.trialid = None
-				return True
+		if self.match(l, u'MSG', int, (u'end_trial', u'stop_trial')):
+			self.trialid = None
+			return True
 		return False
 
 	def split(self, line):

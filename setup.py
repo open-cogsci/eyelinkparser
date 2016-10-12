@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from datamatrix import __version__
+from eyelinkparser import __version__
 from setuptools import setup, find_packages
 
 # Increment to force a change in the source tarball.
