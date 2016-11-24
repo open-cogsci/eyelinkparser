@@ -35,6 +35,13 @@ End of a period of continuous data:
 
 	end_phase [name]
 	stop_phase [name]
+	
+	
+## Example
+
+For an example analysis, see:
+
+- [using-eyelinkparser.ipynb](using-eyelinkparser.ipynb)
 
 ## Dependencies
 

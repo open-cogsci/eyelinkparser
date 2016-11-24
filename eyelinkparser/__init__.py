@@ -22,7 +22,7 @@ from datamatrix.py3compat import *
 from eyelinkparser._events import sample, fixation, saccade
 from eyelinkparser._eyelinkparser import EyeLinkParser
 
-__version__ = u'0.3.0'
+__version__ = u'0.4.0'
 
 @cached
 def parse(parser=EyeLinkParser, **kwdict):

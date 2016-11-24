@@ -23,7 +23,7 @@ import shlex
 import os
 from datamatrix import DataMatrix, SeriesColumn, operations
 from datamatrix.py3compat import *
-from eyelinkparser import sample
+from eyelinkparser import sample, fixation
 import numpy as np
 import numbers
 import warnings
@@ -159,7 +159,7 @@ class EyeLinkParser(object):
 			self.end_phase()
 		self.on_end_trial()
 		return self.trialdm
-
+		
 	def parse_variable(self, l):
 
 		# MSG	6740629 var rt 805
@@ -179,12 +179,16 @@ class EyeLinkParser(object):
 				% (l[3], self.current_phase))
 			self.end_phase()
 		self.current_phase = l[3]
-		if self.current_phase in self.trialdm:
+		if u'ptrace_%s' % self.current_phase in self.trialdm:
 			raise Exception('Phase %s occurs twice' % self.current_phase)
 		self.ptrace = []
 		self.xtrace = []
 		self.ytrace = []
 		self.ttrace = []
+		self.fixxlist = []
+		self.fixylist = []
+		self.fixstlist = []
+		self.fixetlist = []
 
 	def end_phase(self):
 
@@ -192,7 +196,11 @@ class EyeLinkParser(object):
 			(u'ptrace_', self.ptrace),
 			(u'xtrace_', self.xtrace),
 			(u'ytrace_', self.ytrace),
-			(u'ttrace_', self.ttrace)
+			(u'ttrace_', self.ttrace),
+			(u'fixxlist_', self.fixxlist),
+			(u'fixylist_', self.fixylist),
+			(u'fixstlist_', self.fixstlist),
+			(u'fixetlist_', self.fixetlist),
 			]:
 				if self._maxtracelen is not None \
 					and len(trace) > self._maxtracelen:
@@ -207,6 +215,24 @@ class EyeLinkParser(object):
 				if trace and prefix == u'ttrace_':
 					self.trialdm[colname][0] -= self.trialdm[colname][0][0]
 		self.current_phase = None
+		
+	def parse_sample(self, s):
+		
+		if self._downsample is not None and self._lastsampletime is not None \
+			and s.t	- self._lastsampletime < self._downsample:
+				return
+		self._lastsampletime = s.t
+		self.ttrace.append(s.t)
+		self.ptrace.append(s.pupil_size)
+		self.xtrace.append(s.x)
+		self.ytrace.append(s.y)
+		
+	def parse_fixation(self, f):
+		
+		self.fixxlist.append(f.x)
+		self.fixylist.append(f.y)
+		self.fixstlist.append(f.st)
+		self.fixetlist.append(f.et)
 
 	def parse_phase(self, l):
 
@@ -220,16 +246,12 @@ class EyeLinkParser(object):
 		if self.current_phase is None:
 			return
 		s = sample(l)
-		if s is None:
+		if s is not None:
+			self.parse_sample(s)
 			return
-		if self._downsample is not None and self._lastsampletime is not None \
-			and s.t	- self._lastsampletime < self._downsample:
-				return
-		self._lastsampletime = s.t
-		self.ttrace.append(s.t)
-		self.ptrace.append(s.pupil_size)
-		self.xtrace.append(s.x)
-		self.ytrace.append(s.y)
+		f = fixation(l)
+		if f is not None:
+			self.parse_fixation(f)
 
 	def is_start_trial(self, l):
 
