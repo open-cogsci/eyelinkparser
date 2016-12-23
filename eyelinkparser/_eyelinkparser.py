@@ -245,7 +245,9 @@ class EyeLinkParser(object):
 			self.start_phase(l)
 			return
 		if self.match(l, u'MSG', int, (u'end_phase', u'stop_phase'), basestring):
-			assert(self.current_phase == l[3])
+			if self.current_phase != l[3]:
+				warnings.warn(u'Trace %s was ended while current phase was %s' \
+					% (l[3], self.current_phase))
 			self.end_phase()
 			return
 		if self.current_phase is None:
