@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import gc
 import math
 import sys
 import shlex
@@ -135,6 +136,10 @@ class EyeLinkParser(object):
 					ntrial += 1
 					self.print_(u'.')
 					self.filedm <<= self.parse_trial(f)
+					# Force garbage collection. Without it, memory seems to fill
+					# up more quickly than necessary.
+					del self.trialdm
+					gc.collect()
 		self.on_end_file()
 		self.print_(u' (%d trials)\n' % ntrial)
 		return self.filedm
