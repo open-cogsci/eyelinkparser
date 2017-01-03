@@ -17,17 +17,15 @@ You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from datamatrix.py3compat import *
 import gc
 import math
 import sys
 import shlex
 import os
-from datamatrix import DataMatrix, SeriesColumn, operations
-from datamatrix.py3compat import *
-from eyelinkparser import sample, fixation
-import numpy as np
-import numbers
 import warnings
+from datamatrix import DataMatrix, SeriesColumn, operations
+from eyelinkparser import sample, fixation
 
 ANY_VALUE = int, float, basestring
 
@@ -51,9 +49,9 @@ class EyeLinkParser(object):
 			downsample:
 				type:	[int, None]
 				desc:	Indicates whether traces (if any) should be downsampled.
-						For example, a value of 10 means a sample is retained
-						at most once every 10 ms (but less if the sampling
-						rate). is less to begin with.
+						For example, a value of 10 means that a sample is
+						retained at most once every 10 ms (but less often if
+						the sampling rate is less to begin with).
 			maxtracelen:
 				type:	[int, None]
 				desc:	A maximum length for traces. Longer traces are truncated
@@ -62,7 +60,6 @@ class EyeLinkParser(object):
 
 		self.dm = DataMatrix()
 		self._downsample = downsample
-		self._lastsampletime = None
 		self._maxtracelen = maxtracelen
 		for fname in sorted(os.listdir(folder)):
 			if not fname.endswith(ext):
@@ -125,7 +122,8 @@ class EyeLinkParser(object):
 	def parse_file(self, path):
 
 		self.filedm = DataMatrix()
-		self.print_(u'Parsing %s ' % path)
+		self._lastsampletime = None		
+		self.print_(u'Parsing %s ' % path)		
 		self.path = path
 		self.on_start_file()
 		ntrial = 0
