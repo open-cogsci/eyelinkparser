@@ -24,8 +24,9 @@ import sys
 import shlex
 import os
 import warnings
+import numpy as np
 from datamatrix import DataMatrix, SeriesColumn, operations
-from eyelinkparser import sample, fixation
+from eyelinkparser import sample, fixation, defaulttraceprocessor
 
 ANY_VALUE = int, float, basestring
 
@@ -33,7 +34,7 @@ ANY_VALUE = int, float, basestring
 class EyeLinkParser(object):
 
 	def __init__(self, folder=u'data', ext=u'.asc', downsample=None,
-		maxtracelen=None):
+		maxtracelen=None, traceprocessor=None):
 		
 		"""
 		desc:
@@ -48,19 +49,47 @@ class EyeLinkParser(object):
 				desc:	The data-file extension
 			downsample:
 				type:	[int, None]
-				desc:	Indicates whether traces (if any) should be downsampled.
-						For example, a value of 10 means that a sample is
-						retained at most once every 10 ms (but less often if
-						the sampling rate is less to begin with).
+				desc: >
+						Indicates whether traces (if any) should be downsampled.
+						For example, a value of 10 means that the signal becomes
+						10 times shorter.
+						
+						Downsample creates a simple traceprocessor, and can
+						therefore not be used in combination with the
+						traceprocessor argument.
 			maxtracelen:
 				type:	[int, None]
 				desc:	A maximum length for traces. Longer traces are truncated
-						and a UserWarning is emitted.
+						and a UserWarning is emitted. This length refers to the
+						trace after processing.
+			traceprocessor:
+				type:	[callable, None]
+				desc: >
+						A function that is applied to each trace before the
+						trace is written to the SeriesColumn. This can be used
+						to apply a series of operations that are best done on
+						the raw signal, such as first correcting blinks and then
+						downsampling the signal.
+						
+						The function must accept two arguments: first a label
+						for the trace, which is 'pupil', 'xcoor', 'ycoor', or
+						'time'. This allows the function to distinguish the
+						different kinds of singals; second, the trace itself.
+						
+						See `eyelinkparser.defaulttraceprocessor` for a
+						convenience function that applies blink correction and
+						downsampling.
 		"""
 
 		self.dm = DataMatrix()
-		self._downsample = downsample
+		
+		if downsample is not None:
+			if traceprocessor is not None:
+				raise ValueError(
+					'You can specify a downsampling rate or traceprocessor, but not both')
+			traceprocessor = defaulttraceprocessor(downsample=downsample)
 		self._maxtracelen = maxtracelen
+		self._traceprocessor = traceprocessor
 		for fname in sorted(os.listdir(folder)):
 			if not fname.endswith(ext):
 				continue
@@ -122,7 +151,6 @@ class EyeLinkParser(object):
 	def parse_file(self, path):
 
 		self.filedm = DataMatrix()
-		self._lastsampletime = None		
 		self.print_(u'Parsing %s ' % path)		
 		self.path = path
 		self.on_start_file()
@@ -195,36 +223,43 @@ class EyeLinkParser(object):
 
 	def end_phase(self):
 
-		for prefix, trace in [
-			(u'ptrace_', self.ptrace),
-			(u'xtrace_', self.xtrace),
-			(u'ytrace_', self.ytrace),
-			(u'ttrace_', self.ttrace),
-			(u'fixxlist_', self.fixxlist),
-			(u'fixylist_', self.fixylist),
-			(u'fixstlist_', self.fixstlist),
-			(u'fixetlist_', self.fixetlist),
-			]:
-				if self._maxtracelen is not None \
-					and len(trace) > self._maxtracelen:
-						warnings.warn(u'Trace %s is too long (%d samples)' \
-							% (self.current_phase, len(trace)))
-						trace = trace[:self._maxtracelen]
-				colname = prefix + self.current_phase
-				self.trialdm[colname] = SeriesColumn(
-					len(trace), defaultnan=True)
-				self.trialdm[colname][0] = trace
-				# Start the time trace at 0
-				if trace and prefix == u'ttrace_':
-					self.trialdm[colname][0] -= self.trialdm[colname][0][0]
+		for i, (tracelabel, prefix, trace) in enumerate([
+				(u'pupil', u'ptrace_', self.ptrace),
+				(u'xcoor', u'xtrace_', self.xtrace),
+				(u'ycoor', u'ytrace_', self.ytrace),
+				(u'time', u'ttrace_', self.ttrace),
+				(None, u'fixxlist_', self.fixxlist),
+				(None, u'fixylist_', self.fixylist),
+				(None, u'fixstlist_', self.fixstlist),
+				(None, u'fixetlist_', self.fixetlist),
+				]):
+			trace = np.array(trace)
+			if tracelabel is not None and self._traceprocessor is not None:
+				trace = self._traceprocessor(tracelabel, trace)
+			if self._maxtracelen is not None \
+				and len(trace) > self._maxtracelen:
+					warnings.warn(u'Trace %s is too long (%d samples)' \
+						% (self.current_phase, len(trace)))
+					trace = trace[:self._maxtracelen]
+			colname = prefix + self.current_phase
+			self.trialdm[colname] = SeriesColumn(
+				len(trace), defaultnan=True)
+			self.trialdm[colname][0] = trace
+			# Start the time trace at 0
+			if len(trace) and prefix == u'ttrace_':
+				self.trialdm[colname][0] -= self.trialdm[colname][0][0]
+		# DEBUG CODE
+		# 	from matplotlib import pyplot as plt
+		# 	plt.subplot(4,2,i+1)
+		# 	plt.title(colname)
+		# 	plt.plot(_trace, color='blue')				
+		# 	xdata = np.linspace(0, len(_trace)-1, len(trace))
+		# 	plt.plot(xdata, trace, color='red')				
+		# plt.show()
 		self.current_phase = None
 		
 	def parse_sample(self, s):
 		
-		if self._downsample is not None and self._lastsampletime is not None \
-			and s.t	- self._lastsampletime < self._downsample:
-				return
-		self._lastsampletime = s.t
 		self.ttrace.append(s.t)
 		self.ptrace.append(s.pupil_size)
 		self.xtrace.append(s.x)

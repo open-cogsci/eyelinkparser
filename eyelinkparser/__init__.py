@@ -20,9 +20,10 @@ along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 from datamatrix import cached
 from datamatrix.py3compat import *
 from eyelinkparser._events import sample, fixation, saccade
+from eyelinkparser._traceprocessor import defaulttraceprocessor
 from eyelinkparser._eyelinkparser import EyeLinkParser
 
-__version__ = u'0.4.2'
+__version__ = u'0.5.0'
 
 @cached
 def parse(parser=EyeLinkParser, **kwdict):
