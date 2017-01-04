@@ -42,6 +42,7 @@ def defaulttraceprocessor(blinkreconstruct=False, downsample=None):
 	returns:
 		desc:	A function suitable as traceprocessor argument.
 		type:	callable
+	"""
 	
 	def fnc(label, trace, blinkreconstruct, downsample):
 		
