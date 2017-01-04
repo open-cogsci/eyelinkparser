@@ -21,9 +21,13 @@ from datamatrix.py3compat import *
 import gc
 import math
 import sys
-import shlex
 import os
 import warnings
+try:
+	import fastnumbers
+except ImportError:
+	warnings.warn('Install fastnumbers for better performance')
+	fastnumbers = None
 import numpy as np
 from datamatrix import DataMatrix, SeriesColumn, operations
 from eyelinkparser import sample, fixation, defaulttraceprocessor
@@ -312,8 +316,11 @@ class EyeLinkParser(object):
 
 	def split(self, line):
 
+		if fastnumbers is not None:
+			return [fastnumbers.fast_real(s, nan=u'nan', inf=u'inf') \
+				for s in line.split()]
 		l = []
-		for s in shlex.split(line):
+		for s in line.split():
 			try:
 				l.append(int(s))
 			except:

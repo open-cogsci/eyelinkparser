@@ -42,6 +42,7 @@ setup(
 		'Programming Language :: Python :: 3',
 	],
 	install_requires=[
-		'python-datamatrix'
+		'python-datamatrix',
+		'fastnumbers'
 		]
 )
