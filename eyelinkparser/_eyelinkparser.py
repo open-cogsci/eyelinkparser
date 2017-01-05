@@ -161,6 +161,10 @@ class EyeLinkParser(object):
 		ntrial = 0
 		with open(path) as f:
 			for line in f:
+				# Only messages can be start-trial messages, so performance we
+				# don't do anything with non-MSG lines.
+				if not line.startswith('MSG'):
+					continue
 				l = self.split(line)
 				if self.is_start_trial(l):
 					ntrial += 1
@@ -182,10 +186,13 @@ class EyeLinkParser(object):
 		self.on_start_trial()
 		for line in f:
 			l = self.split(line)
-			if self.is_end_trial(l):
-				break
-			self.parse_variable(l)
-			self.parse_phase(l)
+			# Only messages can be variables or end-trial messages, so to
+			# improve performance don't even check.
+			if l[0] == 'MSG':
+				if self.is_end_trial(l):
+					break
+				self.parse_variable(l)
+			self.parse_phase(l)			
 			self.parse_line(l)
 		if self.current_phase is not None:
 			warnings.warn(
@@ -278,15 +285,18 @@ class EyeLinkParser(object):
 
 	def parse_phase(self, l):
 
-		if self.match(l, u'MSG', int, (u'start_phase', u'phase'), basestring):
-			self.start_phase(l)
-			return
-		if self.match(l, u'MSG', int, (u'end_phase', u'stop_phase'), basestring):
-			if self.current_phase != l[3]:
-				warnings.warn(u'Trace %s was ended while current phase was %s' \
-					% (l[3], self.current_phase))
-			self.end_phase()
-			return
+		# For performance only check for start- and end-phase messages if there
+		# actually is a message
+		if l[0] == 'MSG':
+			if self.match(l, u'MSG', int, (u'start_phase', u'phase'), basestring):
+				self.start_phase(l)
+				return
+			if self.match(l, u'MSG', int, (u'end_phase', u'stop_phase'), basestring):
+				if self.current_phase != l[3]:
+					warnings.warn(u'Trace %s was ended while current phase was %s' \
+						% (l[3], self.current_phase))
+				self.end_phase()
+				return
 		if self.current_phase is None:
 			return
 		s = sample(l)
@@ -296,7 +306,7 @@ class EyeLinkParser(object):
 		f = fixation(l)
 		if f is not None:
 			self.parse_fixation(f)
-
+			
 	def is_start_trial(self, l):
 
 		# MSG	6735155 start_trial 1
