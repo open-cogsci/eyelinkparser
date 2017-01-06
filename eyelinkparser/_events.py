@@ -21,14 +21,24 @@ import warnings
 import numbers
 from datamatrix.py3compat import *
 import numpy as np
+try:
+	import fastnumbers
+except ImportError:
+	warnings.warn('Install fastnumbers for better performance')
+	fastnumbers = None
 
 
 class Event(object):
 
 	def assert_numeric(self, l, indices):
 
+		if fastnumbers is not None:
+			for i in indices:
+				if not fastnumbers.isreal(l[i]):
+					raise TypeError()
+			return
 		for i in indices:
-			if not isinstance(l[i], numbers.Number) or l[i] <= 0:
+			if not isinstance(l[i], (int, float)) or l[i] <= 0:
 				raise TypeError()
 
 

@@ -170,12 +170,11 @@ class EyeLinkParser(object):
 					ntrial += 1
 					self.print_(u'.')
 					self.filedm <<= self.parse_trial(f)
-					# Force garbage collection. Without it, memory seems to fill
-					# up more quickly than necessary.
-					del self.trialdm
-					gc.collect()
 		self.on_end_file()
 		self.print_(u' (%d trials)\n' % ntrial)
+		# Force garbage collection. Without it, memory seems to fill
+		# up more quickly than necessary.
+		gc.collect()		
 		return self.filedm
 
 	def parse_trial(self, f):
