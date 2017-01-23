@@ -294,6 +294,7 @@ class EyeLinkParser(object):
 				if self.current_phase != l[3]:
 					warnings.warn(u'Trace %s was ended while current phase was %s' \
 						% (l[3], self.current_phase))
+					return
 				self.end_phase()
 				return
 		if self.current_phase is None:
