@@ -45,7 +45,7 @@ class EyeLinkParser(object):
 			Constructor.
 			
 		keywords:
-			data:
+			folder:
 				type:	str
 				desc:	The folder containing data files
 			ext:
