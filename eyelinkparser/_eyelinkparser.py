@@ -185,6 +185,9 @@ class EyeLinkParser(object):
 		self.on_start_trial()
 		for line in f:
 			l = self.split(line)
+			if not l:
+				warnings.warn(u'Empty line')
+				continue
 			# Only messages can be variables or end-trial messages, so to
 			# improve performance don't even check.
 			if l[0] == 'MSG':
