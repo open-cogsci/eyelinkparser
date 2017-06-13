@@ -38,7 +38,7 @@ ANY_VALUE = int, float, basestring
 class EyeLinkParser(object):
 
 	def __init__(self, folder=u'data', ext=u'.asc', downsample=None,
-		maxtracelen=None, traceprocessor=None):
+		maxtracelen=None, traceprocessor=None, phasefilter=None):
 		
 		"""
 		desc:
@@ -83,6 +83,12 @@ class EyeLinkParser(object):
 						See `eyelinkparser.defaulttraceprocessor` for a
 						convenience function that applies blink correction and
 						downsampling.
+			phasefilter:
+				type:	[callable,None]
+				desc: >
+						A function that receives a phase name as argument, and
+						returns a bool indicating whether that phase should be
+						retained.						
 		"""
 
 		self.dm = DataMatrix()
@@ -94,6 +100,7 @@ class EyeLinkParser(object):
 			traceprocessor = defaulttraceprocessor(downsample=downsample)
 		self._maxtracelen = maxtracelen
 		self._traceprocessor = traceprocessor
+		self._phasefilter = phasefilter
 		for fname in sorted(os.listdir(folder)):
 			if not fname.endswith(ext):
 				continue
@@ -155,6 +162,7 @@ class EyeLinkParser(object):
 	def parse_file(self, path):
 
 		self.filedm = DataMatrix()
+		self.trialid = None
 		self.print_(u'Parsing %s ' % path)		
 		self.path = path
 		self.on_start_file()
@@ -222,6 +230,8 @@ class EyeLinkParser(object):
 				u'Phase "%s" started while phase "%s" was still ongoing' \
 				% (l[3], self.current_phase))
 			self.end_phase()
+		if self._phasefilter is not None and not self._phasefilter(l[3]):
+			return
 		self.current_phase = l[3]
 		if u'ptrace_%s' % self.current_phase in self.trialdm:
 			raise Exception('Phase %s occurs twice' % self.current_phase)
@@ -315,6 +325,14 @@ class EyeLinkParser(object):
 		# MSG	6735155 start_trial 1
 		if self.match(l, u'MSG', int, u'start_trial', ANY_VALUE):
 			self.trialid = l[3]
+			self.current_phase = None
+			return True
+		# MSG	6735155 start_trial
+		if self.match(l, u'MSG', int, u'start_trial'):
+			if self.trialid is None:
+				self.trialid = 0
+			else:
+				self.trialid += 1
 			self.current_phase = None
 			return True
 		return False
