@@ -33,6 +33,7 @@ from datamatrix import DataMatrix, SeriesColumn, operations
 from eyelinkparser import sample, fixation, defaulttraceprocessor
 
 ANY_VALUE = int, float, basestring
+ANY_VALUES = list, int, float, basestring
 
 
 class EyeLinkParser(object):
@@ -134,7 +135,7 @@ class EyeLinkParser(object):
 	
 	def match(self, l, *ref):
 		
-		if len(l) != len(ref):
+		if len(l) != len(ref) and (ref[-1] != ANY_VALUES or len(ref) > len(l)):
 			return False
 		for i1, i2 in zip(l, ref):
 			# Literal match
@@ -215,10 +216,10 @@ class EyeLinkParser(object):
 	def parse_variable(self, l):
 
 		# MSG	6740629 var rt 805
-		if not self.match(l, u'MSG', int, u'var', basestring, ANY_VALUE):
+		if not self.match(l, u'MSG', int, u'var', basestring, ANY_VALUES):
 			return
 		var = l[3]
-		val = l[4]
+		val = u' '.join([safe_decode(i) for i in l[4:]])
 		if var in self.trialdm:
 			warnings.warn(u'Variable "%s" defined twice in one trial' % var)
 		self.trialdm[var] = val
