@@ -244,9 +244,11 @@ class EyeLinkParser(object):
 		self.fixylist = []
 		self.fixstlist = []
 		self.fixetlist = []
+		self._t_onset = self.trialdm['t_onset_%s' % self.current_phase] = l[1]
 
-	def end_phase(self):
+	def end_phase(self, l):
 
+		self.trialdm['t_offset_%s' % self.current_phase] = l[1]
 		for i, (tracelabel, prefix, trace) in enumerate([
 				(u'pupil', u'ptrace_', self.ptrace),
 				(u'xcoor', u'xtrace_', self.xtrace),
@@ -270,8 +272,9 @@ class EyeLinkParser(object):
 				len(trace), defaultnan=True)
 			self.trialdm[colname][0] = trace
 			# Start the time trace at 0
-			if len(trace) and prefix == u'ttrace_':
-				self.trialdm[colname][0] -= self.trialdm[colname][0][0]
+			if len(trace) and prefix in (u'ttrace_', u'fixstlist_',
+					u'fixetlist_'):
+				self.trialdm[colname][0] -= self._t_onset
 		# DEBUG CODE
 		# 	from matplotlib import pyplot as plt
 		# 	plt.subplot(4,2,i+1)
@@ -309,7 +312,7 @@ class EyeLinkParser(object):
 					warnings.warn(u'Trace %s was ended while current phase was %s' \
 						% (l[3], self.current_phase))
 					return
-				self.end_phase()
+				self.end_phase(l)
 				return
 		if self.current_phase is None:
 			return
