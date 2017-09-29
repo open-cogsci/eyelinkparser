@@ -40,11 +40,11 @@ class EyeLinkParser(object):
 
 	def __init__(self, folder=u'data', ext=u'.asc', downsample=None,
 		maxtracelen=None, traceprocessor=None, phasefilter=None):
-		
+
 		"""
 		desc:
 			Constructor.
-			
+
 		keywords:
 			folder:
 				type:	str
@@ -58,7 +58,7 @@ class EyeLinkParser(object):
 						Indicates whether traces (if any) should be downsampled.
 						For example, a value of 10 means that the signal becomes
 						10 times shorter.
-						
+
 						Downsample creates a simple traceprocessor, and can
 						therefore not be used in combination with the
 						traceprocessor argument.
@@ -75,12 +75,12 @@ class EyeLinkParser(object):
 						to apply a series of operations that are best done on
 						the raw signal, such as first correcting blinks and then
 						downsampling the signal.
-						
+
 						The function must accept two arguments: first a label
 						for the trace, which is 'pupil', 'xcoor', 'ycoor', or
 						'time'. This allows the function to distinguish the
 						different kinds of singals; second, the trace itself.
-						
+
 						See `eyelinkparser.defaulttraceprocessor` for a
 						convenience function that applies blink correction and
 						downsampling.
@@ -89,11 +89,11 @@ class EyeLinkParser(object):
 				desc: >
 						A function that receives a phase name as argument, and
 						returns a bool indicating whether that phase should be
-						retained.						
+						retained.
 		"""
 
 		self.dm = DataMatrix()
-		
+
 		if downsample is not None:
 			if traceprocessor is not None:
 				raise ValueError(
@@ -132,9 +132,9 @@ class EyeLinkParser(object):
 		pass
 
 	# Internal functions
-	
+
 	def match(self, l, *ref):
-		
+
 		if len(l) != len(ref) and (ref[-1] != ANY_VALUES or len(ref) > len(l)):
 			return False
 		for i1, i2 in zip(l, ref):
@@ -153,7 +153,7 @@ class EyeLinkParser(object):
 				and isinstance(i1, i2):
 					continue
 			return False
-		return True		
+		return True
 
 	def print_(self, s):
 
@@ -164,7 +164,7 @@ class EyeLinkParser(object):
 
 		self.filedm = DataMatrix()
 		self.trialid = None
-		self.print_(u'Parsing %s ' % path)		
+		self.print_(u'Parsing %s ' % path)
 		self.path = path
 		self.on_start_file()
 		ntrial = 0
@@ -183,7 +183,7 @@ class EyeLinkParser(object):
 		self.print_(u' (%d trials)\n' % ntrial)
 		# Force garbage collection. Without it, memory seems to fill
 		# up more quickly than necessary.
-		gc.collect()		
+		gc.collect()
 		return self.filedm
 
 	def parse_trial(self, f):
@@ -203,16 +203,16 @@ class EyeLinkParser(object):
 				if self.is_end_trial(l):
 					break
 				self.parse_variable(l)
-			self.parse_phase(l)			
+			self.parse_phase(l)
 			self.parse_line(l)
 		if self.current_phase is not None:
 			warnings.warn(
 				u'Trial ended while phase "%s" was still ongoing' \
 				% self.current_phase)
-			self.end_phase()
+			self.end_phase(l)
 		self.on_end_trial()
 		return self.trialdm
-		
+
 	def parse_variable(self, l):
 
 		# MSG	6740629 var rt 805
@@ -279,21 +279,21 @@ class EyeLinkParser(object):
 		# 	from matplotlib import pyplot as plt
 		# 	plt.subplot(4,2,i+1)
 		# 	plt.title(colname)
-		# 	plt.plot(_trace, color='blue')				
+		# 	plt.plot(_trace, color='blue')
 		# 	xdata = np.linspace(0, len(_trace)-1, len(trace))
-		# 	plt.plot(xdata, trace, color='red')				
+		# 	plt.plot(xdata, trace, color='red')
 		# plt.show()
 		self.current_phase = None
-		
+
 	def parse_sample(self, s):
-		
+
 		self.ttrace.append(s.t)
 		self.ptrace.append(s.pupil_size)
 		self.xtrace.append(s.x)
 		self.ytrace.append(s.y)
-		
+
 	def parse_fixation(self, f):
-		
+
 		self.fixxlist.append(f.x)
 		self.fixylist.append(f.y)
 		self.fixstlist.append(f.st)
@@ -323,7 +323,7 @@ class EyeLinkParser(object):
 		f = fixation(l)
 		if f is not None:
 			self.parse_fixation(f)
-			
+
 	def is_start_trial(self, l):
 
 		# MSG	6735155 start_trial 1
