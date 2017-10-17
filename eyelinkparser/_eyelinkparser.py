@@ -230,7 +230,7 @@ class EyeLinkParser(object):
 			warnings.warn(
 				u'Phase "%s" started while phase "%s" was still ongoing' \
 				% (l[3], self.current_phase))
-			self.end_phase()
+			self.end_phase(l)
 		if self._phasefilter is not None and not self._phasefilter(l[3]):
 			return
 		self.current_phase = l[3]
