@@ -160,6 +160,17 @@ class EyeLinkParser(object):
 		sys.stdout.write(s)
 		sys.stdout.flush()
 
+	def stacked_file(self, f):
+
+		for line in f:
+			yield line
+			while self._linestack:
+				yield self._linestack.pop()
+
+	def redo_line(self, line):
+
+		self._linestack.append(line)
+
 	def parse_file(self, path):
 
 		self.filedm = DataMatrix()
@@ -168,11 +179,12 @@ class EyeLinkParser(object):
 		self.path = path
 		self.on_start_file()
 		ntrial = 0
+		self._linestack = []
 		with open(path) as f:
-			for line in f:
+			for line in self.stacked_file(f):
 				# Only messages can be start-trial messages, so performance we
 				# don't do anything with non-MSG lines.
-				if not line.startswith('MSG'):
+				if not self.is_message(line):
 					continue
 				l = self.split(line)
 				if self.is_start_trial(l):
@@ -192,14 +204,14 @@ class EyeLinkParser(object):
 		self.trialdm.path = self.path
 		self.trialdm.trialid = self.trialid
 		self.on_start_trial()
-		for line in f:
+		for line in self.stacked_file(f):
 			l = self.split(line)
 			if not l:
 				warnings.warn(u'Empty line')
 				continue
 			# Only messages can be variables or end-trial messages, so to
 			# improve performance don't even check.
-			if l[0] == 'MSG':
+			if self.is_message(l):
 				if self.is_end_trial(l):
 					break
 				self.parse_variable(l)
@@ -348,6 +360,10 @@ class EyeLinkParser(object):
 			self.trialid = None
 			return True
 		return False
+
+	def is_message(self, line):
+
+		return line.startswith(u'MSG')
 
 	def split(self, line):
 
