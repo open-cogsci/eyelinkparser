@@ -22,25 +22,25 @@ from eyelinkparser import EyeLinkParser
 
 
 def chain(*functions):
-	
+
 	return lambda: [function() for function in functions]
 
 
 class EyeTribeParser(EyeLinkParser):
-	
+
 	def __init__(self, **kwargs):
-		
+
 		if u'ext' not in kwargs:
-			kwargs[u'ext'] = u'.tsv'
+			kwargs[u'ext'] = [u'.tar.xz', u'.tsv']
 		self.on_start_trial = chain(self.init_infix, self.on_start_trial)
 		EyeLinkParser.__init__(self, **kwargs)
-		
+
 	def init_infix(self):
-		
+
 		self.infix = False
-		
+
 	def split(self, line):
-	
+
 		l = EyeLinkParser.split(self, line)
 		if not l:
 			return l
@@ -49,7 +49,7 @@ class EyeTribeParser(EyeLinkParser):
 			l = l[3:]
 			l.insert(0, u'MSG')
 			return l
-		# Convert samples to EyeLink format:		
+		# Convert samples to EyeLink format:
 		if len(l) == 24:
 			x, y, ps = l[7:10]
 			t = l[2]

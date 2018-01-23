@@ -27,7 +27,7 @@ class SMIParser(EyeLinkParser):
 	def __init__(self, **kwargs):
 
 		if u'ext' not in kwargs:
-			kwargs[u'ext'] = u'.txt'
+			kwargs[u'ext'] = [u'.tar.xz', u'.txt']
 		EyeLinkParser.__init__(self, **kwargs)
 
 	def is_end_trial(self, l):

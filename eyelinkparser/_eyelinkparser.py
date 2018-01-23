@@ -23,6 +23,9 @@ import math
 import sys
 import os
 import warnings
+import tempfile
+import subprocess
+import itertools
 try:
 	import fastnumbers
 except ImportError:
@@ -38,8 +41,11 @@ ANY_VALUES = list, int, float, basestring
 
 class EyeLinkParser(object):
 
-	def __init__(self, folder=u'data', ext=u'.asc', downsample=None,
-		maxtracelen=None, traceprocessor=None, phasefilter=None):
+	def __init__(
+		self, folder=u'data', ext=(u'.asc', u'.edf', u'.tar.xz'),
+		downsample=None, maxtracelen=None, traceprocessor=None,
+		phasefilter=None, edf2asc_binary=u'edf2asc'
+	):
 
 		"""
 		desc:
@@ -50,8 +56,8 @@ class EyeLinkParser(object):
 				type:	str
 				desc:	The folder containing data files
 			ext:
-				type:	str
-				desc:	The data-file extension
+				type:	str, tuple
+				desc:	The data-file extension, or tuple of extensions.
 			downsample:
 				type:	[int, None]
 				desc: >
@@ -90,10 +96,14 @@ class EyeLinkParser(object):
 						A function that receives a phase name as argument, and
 						returns a bool indicating whether that phase should be
 						retained.
+			edf2asc_binary:
+				type:	str
+				desc: >
+						The name of the edf2asc executable, which if available
+						can be used to automatically convert edf files to asc.
 		"""
 
 		self.dm = DataMatrix()
-
 		if downsample is not None:
 			if traceprocessor is not None:
 				raise ValueError(
@@ -102,11 +112,24 @@ class EyeLinkParser(object):
 		self._maxtracelen = maxtracelen
 		self._traceprocessor = traceprocessor
 		self._phasefilter = phasefilter
-		for fname in sorted(os.listdir(folder)):
-			if not fname.endswith(ext):
-				continue
-			path = os.path.join(folder, fname)
-			self.dm <<= self.parse_file(path)
+		self._edf2asc_binary = edf2asc_binary
+		# Get a list of input files. First, only files in the data folder that
+		# match any of the extensions. Then, these files are passed to the
+		# converter which may return multiple files, for example if they have
+		# been compressed. The result is a list of iterators, which is chained
+		# into a single iterator.
+		input_files = itertools.chain(*(
+			self.convert_file(os.path.join(folder, fname))
+			for fname in sorted(os.listdir(folder))
+			if (
+				fname.lower().endswith(ext.lower())
+				if isinstance(ext, basestring)
+				else any(fname.lower().endswith(e.lower()) for e in ext)
+			)
+		))
+		for fname in input_files:
+			print(fname)
+			self.dm <<= self.parse_file(fname)
 		operations.auto_type(self.dm)
 
 	# Helper functions that can be overridden
@@ -211,7 +234,7 @@ class EyeLinkParser(object):
 				continue
 			# Only messages can be variables or end-trial messages, so to
 			# improve performance don't even check.
-			if self.is_message(l):
+			if self.is_message(line):
 				if self.is_end_trial(l):
 					break
 				self.parse_variable(l)
@@ -384,3 +407,35 @@ class EyeLinkParser(object):
 				except:
 					l.append(s)
 		return l
+
+	def _temp_path(self, path):
+
+		new_path = os.path.join(
+			tempfile.gettempdir(),
+			tempfile.gettempprefix() + os.path.basename(path)
+		)
+		return new_path
+
+	def convert_file(self, path):
+
+		# Compressed files are extracted and the contents are then converted
+		# again
+		if path.lower().endswith(u'.tar.xz'):
+			from tarfile import TarFile
+			tf = TarFile.open(path)
+			for ti in tf:
+				tmp_folder = self._temp_path(ti.name)
+				new_path = os.path.join(tmp_folder, ti.name)
+				print('Extracting %s ...' % ti.name)
+				tf.extract(ti.name, tmp_folder)
+				for newer_path in self.convert_file(new_path):
+					yield newer_path
+			tf.close()
+		# Everything that's not an EDF file is left untouched
+		elif not path.lower().endswith(u'.edf'):
+			yield path
+		# Whereas EDF files are coverted to ASC by edf2asc
+		else:
+			new_path = self._temp_path(path)+u'.asc'
+			subprocess.call([self._edf2asc_binary, u'-y', path, new_path])
+			yield new_path
