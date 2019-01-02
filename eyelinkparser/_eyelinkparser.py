@@ -26,6 +26,7 @@ import warnings
 import tempfile
 import subprocess
 import itertools
+import logging
 try:
 	import fastnumbers
 except ImportError:
@@ -42,9 +43,15 @@ ANY_VALUES = list, int, float, basestring
 class EyeLinkParser(object):
 
 	def __init__(
-		self, folder=u'data', ext=(u'.asc', u'.edf', u'.tar.xz'),
-		downsample=None, maxtracelen=None, traceprocessor=None,
-		phasefilter=None, edf2asc_binary=u'edf2asc'
+		self,
+		folder=u'data',
+		ext=(u'.asc', u'.edf', u'.tar.xz'),
+		downsample=None,
+		maxtracelen=None,
+		traceprocessor=None,
+		phasefilter=None,
+		edf2asc_binary=u'edf2asc',
+		multiprocess=False
 	):
 
 		"""
@@ -101,6 +108,15 @@ class EyeLinkParser(object):
 				desc: >
 						The name of the edf2asc executable, which if available
 						can be used to automatically convert edf files to asc.
+			multiprocess:
+				type:	[bool, int, None]
+				desc:	>
+						Indicates whether each file should be processed in a
+						different process. This can speed up parsing
+						considerably. If it's not False, it should be an int to
+						indicate the number of processes, or None to indicate
+						that the number of processes should be the same as the
+						number of cores.
 		"""
 
 		self.dm = DataMatrix()
@@ -127,9 +143,15 @@ class EyeLinkParser(object):
 				else any(fname.lower().endswith(e.lower()) for e in ext)
 			)
 		))
-		for fname in input_files:
-			print(fname)
-			self.dm <<= self.parse_file(fname)
+		if multiprocess:
+			import multiprocessing as mp
+			with mp.Pool(multiprocess) as p:
+				filedms = p.map(self.parse_file, input_files)
+			while filedms:
+				self.dm <<= filedms.pop()
+		else:
+			for fname in input_files:
+				self.dm <<= self.parse_file(fname)
 		operations.auto_type(self.dm)
 
 	# Helper functions that can be overridden
@@ -196,9 +218,10 @@ class EyeLinkParser(object):
 
 	def parse_file(self, path):
 
+		logging.info(u'parsing {}'.format(path))
+		path = self.edf2asc(path)
 		self.filedm = DataMatrix()
 		self.trialid = None
-		self.print_(u'Parsing %s ' % path)
 		self.path = path
 		self.on_start_file()
 		ntrial = 0
@@ -209,13 +232,12 @@ class EyeLinkParser(object):
 				# don't do anything with non-MSG lines.
 				if not self.is_message(line):
 					continue
-				l = self.split(line)
-				if self.is_start_trial(l):
+				if self.is_start_trial(self.split(line)):
 					ntrial += 1
 					self.print_(u'.')
 					self.filedm <<= self.parse_trial(f)
 		self.on_end_file()
-		self.print_(u' (%d trials)\n' % ntrial)
+		logging.info(u' ({} trials)\n'.format(ntrial))
 		# Force garbage collection. Without it, memory seems to fill
 		# up more quickly than necessary.
 		gc.collect()
@@ -418,24 +440,27 @@ class EyeLinkParser(object):
 
 	def convert_file(self, path):
 
-		# Compressed files are extracted and the contents are then converted
-		# again
-		if path.lower().endswith(u'.tar.xz'):
+		if not path.lower().endswith(u'.tar.xz'):
+			yield path
+		else:
+			# Compressed files are extracted and the contents are then converted
+			# again
 			from tarfile import TarFile
 			tf = TarFile.open(path)
 			for ti in tf:
 				tmp_folder = self._temp_path(ti.name)
 				new_path = os.path.join(tmp_folder, ti.name)
-				print('Extracting %s ...' % ti.name)
+				logging.info('Extracting {} ...'.format(ti.name))
 				tf.extract(ti.name, tmp_folder)
 				for newer_path in self.convert_file(new_path):
 					yield newer_path
 			tf.close()
-		# Everything that's not an EDF file is left untouched
-		elif not path.lower().endswith(u'.edf'):
-			yield path
-		# Whereas EDF files are coverted to ASC by edf2asc
-		else:
-			new_path = self._temp_path(path)+u'.asc'
-			subprocess.call([self._edf2asc_binary, u'-y', path, new_path])
-			yield new_path
+
+	def edf2asc(self, path):
+
+		if not path.lower().endswith(u'.edf'):
+			return path
+		new_path = self._temp_path(path) + u'.asc'
+		subprocess.call([self._edf2asc_binary, u'-y', path, new_path])
+		print(new_path)
+		return new_path
