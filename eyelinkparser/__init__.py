@@ -17,15 +17,14 @@ You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from datamatrix import cached
 from datamatrix.py3compat import *
 from eyelinkparser._events import sample, fixation, saccade
 from eyelinkparser._traceprocessor import defaulttraceprocessor
 from eyelinkparser._eyelinkparser import EyeLinkParser
 
-__version__ = u'0.9.0'
+__version__ = u'0.9.1'
 
-@cached
+
 def parse(parser=EyeLinkParser, **kwdict):
 
 	return parser(**kwdict).dm

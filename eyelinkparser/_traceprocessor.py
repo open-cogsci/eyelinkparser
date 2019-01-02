@@ -22,13 +22,22 @@ import functools
 from datamatrix import series as srs
 
 
+def _fnc(label, trace, blinkreconstruct, downsample):
+
+	if blinkreconstruct:
+		trace = srs._blinkreconstruct(trace)
+	if downsample is not None:
+		trace = srs._downsample(trace, downsample)
+	return trace
+
+
 def defaulttraceprocessor(blinkreconstruct=False, downsample=None):
-	
+
 	"""
 	desc:
 		Creates a function that is suitable as traceprocessor argument for
 		eyelinkparser.__init__().
-		
+
 	arguments:
 		blinkreconstruct:
 			desc:	Indicates whether blink reconstruction should be applied to
@@ -38,19 +47,14 @@ def defaulttraceprocessor(blinkreconstruct=False, downsample=None):
 			desc:	Indicates whether the signal should be downsampled, and if
 					so, by how much.
 			type:	[None, int]
-		
+
 	returns:
 		desc:	A function suitable as traceprocessor argument.
 		type:	callable
 	"""
-	
-	def fnc(label, trace, blinkreconstruct, downsample):
-		
-		if blinkreconstruct:
-			trace = srs._blinkreconstruct(trace)
-		if downsample is not None:
-			trace = srs._downsample(trace, downsample)
-		return trace
-	
-	return functools.partial(fnc, blinkreconstruct=blinkreconstruct,
-		downsample=downsample)
+
+	return functools.partial(
+		_fnc,
+		blinkreconstruct=blinkreconstruct,
+		downsample=downsample
+	)
