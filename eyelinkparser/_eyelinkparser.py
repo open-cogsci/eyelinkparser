@@ -129,6 +129,7 @@ class EyeLinkParser(object):
 		self._traceprocessor = traceprocessor
 		self._phasefilter = phasefilter
 		self._edf2asc_binary = edf2asc_binary
+		self._temp_files = []
 		# Get a list of input files. First, only files in the data folder that
 		# match any of the extensions. Then, these files are passed to the
 		# converter which may return multiple files, for example if they have
@@ -241,6 +242,7 @@ class EyeLinkParser(object):
 		# Force garbage collection. Without it, memory seems to fill
 		# up more quickly than necessary.
 		gc.collect()
+		self._delete_temp_file(path)
 		return self.filedm
 
 	def parse_trial(self, f):
@@ -450,11 +452,25 @@ class EyeLinkParser(object):
 			for ti in tf:
 				tmp_folder = self._temp_path(ti.name)
 				new_path = os.path.join(tmp_folder, ti.name)
+				self._register_temp_file(new_path)
 				logging.info('Extracting {} ...'.format(ti.name))
 				tf.extract(ti.name, tmp_folder)
 				for newer_path in self.convert_file(new_path):
 					yield newer_path
 			tf.close()
+
+	def _delete_temp_file(self, path):
+
+		if path not in self._temp_files:
+			return
+		os.remove(path)
+		logging.info('deleting temporary file {}'.format(path))
+		self._temp_files.remove(path)
+
+	def _register_temp_file(self, path):
+
+		logging.info('creating temporary file {}'.format(path))
+		self._temp_files.append(path)
 
 	def edf2asc(self, path):
 
@@ -462,5 +478,7 @@ class EyeLinkParser(object):
 			return path
 		new_path = self._temp_path(path) + u'.asc'
 		subprocess.call([self._edf2asc_binary, u'-y', path, new_path])
+		self._register_temp_file(new_path)
+		self._delete_temp_file(path)
 		print(new_path)
 		return new_path
