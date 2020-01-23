@@ -71,7 +71,7 @@ class Sample(Event):
 	"""
 	desc:
 		# Normal: [Timestamp] [x] [y] [pupil size] ...
-		4815155   168.2   406.5  2141.0 ...		
+		4815155   168.2   406.5  2141.0 ...
 		# During blinks:
 		661781	   .	   .	    0.0	...
 		# Elaborate format:
@@ -82,7 +82,7 @@ class Sample(Event):
 
 	def __init__(self, l):
 
-		if len(l) not in (5, 6, 9) or isinstance(l[0], basestring):
+		if len(l) not in (5, 6, 8, 9) or isinstance(l[0], basestring):
 			raise TypeError()
 		self.assert_numeric(l, [0])
 		self.t = l[0]
