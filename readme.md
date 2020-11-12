@@ -1,12 +1,18 @@
 # Python EyeLinkParser
 
 Sebastiaan Mathôt  <br />
-Copyright 2016-2017  <br />
+Copyright 2016-2020  <br />
 http://www.cogsci.nl/smathot
 
 ## About
 
 The `python-eyelinkparser` module provides a framework to parse EyeLink data files in `.asc` format, that is, the format that you get after converting an `.edf` file with `edf2asc`. This module is mostly for personal use, and is not very well documented.
+
+## Installation
+
+```
+pip install python-eyelinkparser
+```
 
 ## Expected messages
 
@@ -42,12 +48,6 @@ End of a period of continuous data:
 For an example analysis, see:
 
 - [using-eyelinkparser.ipynb](using-eyelinkparser.ipynb)
-
-## Dependencies
-
-Requires `python-datamatrix`:
-
-- <https://github.com/smathot/python-datamatrix>
 
 ## License
 
