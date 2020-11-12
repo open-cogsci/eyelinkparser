@@ -50,6 +50,7 @@ class EyeLinkParser(object):
 		maxtracelen=None,
 		traceprocessor=None,
 		phasefilter=None,
+		trialphase=None,
 		edf2asc_binary=u'edf2asc',
 		multiprocess=False
 	):
@@ -97,6 +98,15 @@ class EyeLinkParser(object):
 						See `eyelinkparser.defaulttraceprocessor` for a
 						convenience function that applies blink correction and
 						downsampling.
+			trialphase:
+				type:	[str, None]
+				desc: >
+						Indicates the name of a phase that should be
+						automatically started when the trial starts, or `None`
+						when no trial should be automatically started. This is
+						mostly convenient for processing trials that consist
+						of a single long epoch, or when no `start_phase`
+						messages are written to the log file.
 			phasefilter:
 				type:	[callable,None]
 				desc: >
@@ -129,6 +139,7 @@ class EyeLinkParser(object):
 		self._traceprocessor = traceprocessor
 		self._phasefilter = phasefilter
 		self._edf2asc_binary = edf2asc_binary
+		self._trialphase = trialphase
 		self._temp_files = []
 		# Get a list of input files. First, only files in the data folder that
 		# match any of the extensions. Then, these files are passed to the
@@ -250,6 +261,8 @@ class EyeLinkParser(object):
 		self.trialdm = DataMatrix(length=1)
 		self.trialdm.path = self.path
 		self.trialdm.trialid = self.trialid
+		if self._trialphase is not None:
+			self.parse_phase(['MSG', 0, 'start_phase', self._trialphase])
 		self.on_start_trial()
 		for line in self.stacked_file(f):
 			l = self.split(line)
