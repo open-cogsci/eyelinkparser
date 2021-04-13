@@ -255,12 +255,23 @@ class EyeLinkParser(object):
         gc.collect()
         self._delete_temp_file(path)
         return self.filedm
+    
+    def parse_error(self, l):
+        
+        if len(l) > 2 and l[2] == 'ERROR':
+            warnings.warn('data error: {} (timestamp: {})'.format(
+                ' '.join([str(e) for e in l[2:]]),
+                l[1],
+            ))
+            return True
+        return False
 
     def parse_trial(self, f):
 
         self.trialdm = DataMatrix(length=1)
         self.trialdm.path = self.path
         self.trialdm.trialid = self.trialid
+        self.trialdm.data_error = 0
         if self._trialphase is not None:
             self.parse_phase(['MSG', 0, 'start_phase', self._trialphase])
         self.on_start_trial()
@@ -269,6 +280,10 @@ class EyeLinkParser(object):
             if not l:
                 warnings.warn(u'Empty line')
                 continue
+            if self.parse_error(l):
+                self.trialdm.data_error = 1
+                warnings.warn('ending trial due to data error')
+                break
             # Only messages can be variables or end-trial messages, so to
             # improve performance don't even check.
             if self.is_message(line):
@@ -307,7 +322,10 @@ class EyeLinkParser(object):
             return
         self.current_phase = l[3]
         if u'ptrace_%s' % self.current_phase in self.trialdm:
-            raise Exception('Phase %s occurs twice (timestamp:{})' % self.current_phase)
+            raise Exception('Phase {} occurs twice (timestamp:{})'.format(
+                self.current_phase,
+                l[1]
+            ))
         self.ptrace = []
         self.xtrace = []
         self.ytrace = []

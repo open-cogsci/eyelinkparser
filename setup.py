@@ -18,16 +18,28 @@ You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 from eyelinkparser import __version__
 from setuptools import setup, find_packages
 
 # Increment to force a change in the source tarball.
-DUMMY=1
+DUMMY = 1
+
+
+def get_readme():
+
+    if os.path.exists('readme.md'):
+        with open('readme.md') as fd:
+            return fd.read()
+    return 'No readme information'
+
 
 setup(
     name=u'python-eyelinkparser',
     version=__version__,
-    description= u'An extensible parser for EyeLink data files (EDF)',
+    description=u'An extensible parser for EyeLink data files (EDF)',
+    long_description=get_readme(),
+    long_description_content_type='text/markdown',
     author=u'Sebastiaan Mathot',
     author_email=u's.mathot@cogsci.nl',
     license=u'GNU GPL Version 3',
