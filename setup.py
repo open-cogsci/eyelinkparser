@@ -25,24 +25,24 @@ from setuptools import setup, find_packages
 DUMMY=1
 
 setup(
-	name=u'python-eyelinkparser',
-	version=__version__,
-	description= u'An extensible parser for EyeLink data files (EDF)',
-	author=u'Sebastiaan Mathot',
-	author_email=u's.mathot@cogsci.nl',
-	license=u'GNU GPL Version 3',
-	packages=find_packages('.'),
-	url=u'https://github.com/smathot/python-eyelinkparser',
-	classifiers=[
-		'Development Status :: 4 - Beta',
-		'Intended Audience :: Science/Research',
-		'Topic :: Scientific/Engineering',
-		'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-		'Programming Language :: Python :: 2',
-		'Programming Language :: Python :: 3',
-	],
-	install_requires=[
-		'python-datamatrix',
-		'fastnumbers'
-		]
+    name=u'python-eyelinkparser',
+    version=__version__,
+    description= u'An extensible parser for EyeLink data files (EDF)',
+    author=u'Sebastiaan Mathot',
+    author_email=u's.mathot@cogsci.nl',
+    license=u'GNU GPL Version 3',
+    packages=find_packages('.'),
+    url=u'https://github.com/smathot/python-eyelinkparser',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
+    ],
+    install_requires=[
+        'python-datamatrix',
+        'fastnumbers'
+        ]
 )

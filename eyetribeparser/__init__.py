@@ -25,4 +25,4 @@ from eyelinkparser import __version__
 @cached
 def parse(parser=EyeTribeParser, **kwdict):
 
-	return parser(**kwdict).dm
+    return parser(**kwdict).dm

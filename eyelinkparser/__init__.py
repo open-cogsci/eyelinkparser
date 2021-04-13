@@ -27,4 +27,4 @@ __version__ = u'0.10.0'
 
 def parse(parser=EyeLinkParser, **kwdict):
 
-	return parser(**kwdict).dm
+    return parser(**kwdict).dm
