@@ -17,12 +17,10 @@ You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from datamatrix import cached
 from eyetribeparser._eyetribeparser import EyeTribeParser
 from eyelinkparser import __version__
 
 
-@cached
 def parse(parser=EyeTribeParser, **kwdict):
 
     return parser(**kwdict).dm

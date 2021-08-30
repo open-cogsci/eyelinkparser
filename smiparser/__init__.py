@@ -17,12 +17,10 @@ You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from datamatrix import cached
 from smiparser._smiparser import SMIParser
 from eyelinkparser import __version__
 
 
-@cached
 def parse(parser=SMIParser, **kwdict):
 
     return parser(**kwdict).dm
