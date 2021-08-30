@@ -1,7 +1,7 @@
 # Python EyeLinkParser
 
 Sebastiaan Mathôt  <br />
-Copyright 2016-2020  <br />
+Copyright 2016-2021  <br />
 http://www.cogsci.nl/smathot
 
 ## About
@@ -43,11 +43,11 @@ End of a period of continuous data:
 	stop_phase [name]
 	
 	
-## Example
+## Usage
 
-For an example analysis, see:
+For a tutorial about using EyeLinkParse, see:
 
-- [using-eyelinkparser.ipynb](using-eyelinkparser.ipynb)
+- <https://datamatrix.cogsci.nl/eyelinkparser/>
 
 ## License
 
