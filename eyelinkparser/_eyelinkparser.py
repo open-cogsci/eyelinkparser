@@ -52,7 +52,8 @@ class EyeLinkParser(object):
         phasefilter=None,
         trialphase=None,
         edf2asc_binary=u'edf2asc',
-        multiprocess=False
+        multiprocess=False,
+        asc_encoding=None
     ):
 
         """
@@ -61,13 +62,13 @@ class EyeLinkParser(object):
 
         keywords:
             folder:
-                type:	str
-                desc:	The folder containing data files
+                type:   str
+                desc:   The folder containing data files
             ext:
-                type:	str, tuple
-                desc:	The data-file extension, or tuple of extensions.
+                type:   str, tuple
+                desc:   The data-file extension, or tuple of extensions.
             downsample:
-                type:	[int, None]
+                type:   [int, None]
                 desc: >
                         Indicates whether traces (if any) should be downsampled.
                         For example, a value of 10 means that the signal becomes
@@ -77,12 +78,12 @@ class EyeLinkParser(object):
                         therefore not be used in combination with the
                         traceprocessor argument.
             maxtracelen:
-                type:	[int, None]
-                desc:	A maximum length for traces. Longer traces are truncated
+                type:   [int, None]
+                desc:   A maximum length for traces. Longer traces are truncated
                         and a UserWarning is emitted. This length refers to the
                         trace after processing.
             traceprocessor:
-                type:	[callable, None]
+                type:   [callable, None]
                 desc: >
                         A function that is applied to each trace before the
                         trace is written to the SeriesColumn. This can be used
@@ -99,7 +100,7 @@ class EyeLinkParser(object):
                         convenience function that applies blink correction and
                         downsampling.
             trialphase:
-                type:	[str, None]
+                type:   [str, None]
                 desc: >
                         Indicates the name of a phase that should be
                         automatically started when the trial starts, or `None`
@@ -108,25 +109,30 @@ class EyeLinkParser(object):
                         of a single long epoch, or when no `start_phase`
                         messages are written to the log file.
             phasefilter:
-                type:	[callable,None]
+                type:   [callable,None]
                 desc: >
                         A function that receives a phase name as argument, and
                         returns a bool indicating whether that phase should be
                         retained.
             edf2asc_binary:
-                type:	str
+                type:   str
                 desc: >
                         The name of the edf2asc executable, which if available
                         can be used to automatically convert edf files to asc.
             multiprocess:
-                type:	[bool, int, None]
-                desc:	>
+                type:   [bool, int, None]
+                desc: >
                         Indicates whether each file should be processed in a
                         different process. This can speed up parsing
                         considerably. If it's not False, it should be an int to
                         indicate the number of processes, or None to indicate
                         that the number of processes should be the same as the
                         number of cores.
+            asc_encoding:
+                type:   [str, None]
+                desc: >
+                        Indicates the character encoding of the `.asc` files,
+                        or `None` to use system default.
         """
 
         self.dm = DataMatrix()
@@ -140,6 +146,7 @@ class EyeLinkParser(object):
         self._phasefilter = phasefilter
         self._edf2asc_binary = edf2asc_binary
         self._trialphase = trialphase
+        self._asc_encoding = asc_encoding
         self._temp_files = []
         # Get a list of input files. First, only files in the data folder that
         # match any of the extensions. Then, these files are passed to the
@@ -238,7 +245,7 @@ class EyeLinkParser(object):
         self.on_start_file()
         ntrial = 0
         self._linestack = []
-        with open(path) as f:
+        with open(path, encoding=self._asc_encoding) as f:
             for line in self.stacked_file(f):
                 # Only messages can be start-trial messages, so performance we
                 # don't do anything with non-MSG lines.
