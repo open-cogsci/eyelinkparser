@@ -356,7 +356,7 @@ class EyeLinkParser(object):
                 (None, u'fixstlist_', self.fixstlist),
                 (None, u'fixetlist_', self.fixetlist),
                 ]):
-            trace = np.array(trace)
+            trace = np.array(trace, dtype=float)
             if tracelabel is not None and self._traceprocessor is not None:
                 trace = self._traceprocessor(tracelabel, trace)
             if self._maxtracelen is not None \

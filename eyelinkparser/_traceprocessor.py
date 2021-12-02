@@ -22,17 +22,21 @@ import functools
 from datamatrix import series as srs
 
 
-def _fnc(label, trace, blinkreconstruct, downsample):
+def _fnc(label, trace, blinkreconstruct, downsample, mode):
 
-    if blinkreconstruct:
-        trace = srs._blinkreconstruct(trace)
+    if label == 'pupil' and blinkreconstruct:
+        try:
+            trace = srs._blinkreconstruct(trace, mode=mode)
+        except TypeError:
+            warn('blinkreconstruct does not support mode keyword. '
+                 'Please update datamatrix.')
     if downsample is not None:
         trace = srs._downsample(trace, downsample)
     return trace
 
 
-def defaulttraceprocessor(blinkreconstruct=False, downsample=None):
-
+def defaulttraceprocessor(blinkreconstruct=False,
+                          downsample=None, mode='original'):
     """
     desc:
         Creates a function that is suitable as traceprocessor argument for
@@ -40,21 +44,28 @@ def defaulttraceprocessor(blinkreconstruct=False, downsample=None):
 
     arguments:
         blinkreconstruct:
-            desc:	Indicates whether blink reconstruction should be applied to
+            desc:   Indicates whether blink reconstruction should be applied to
                     pupil size traces.
-            type:	bool
+            type:   bool
         downsample:
-            desc:	Indicates whether the signal should be downsampled, and if
+            desc:   Indicates whether the signal should be downsampled, and if
                     so, by how much.
-            type:	[None, int]
+            type:   [None, int]
+        mode:
+            desc:   Indicates whether blink-reconstruction should be done with
+                    'original' or 'advanced' mode. Advanced mode is recommended
+                    but original mode is the default for purposes of backwards
+                    compatibility.
+            type:   [str]
 
     returns:
-        desc:	A function suitable as traceprocessor argument.
-        type:	callable
+        desc:   A function suitable as traceprocessor argument.
+        type:   callable
     """
 
     return functools.partial(
         _fnc,
         blinkreconstruct=blinkreconstruct,
-        downsample=downsample
+        downsample=downsample,
+        mode=mode
     )
