@@ -18,11 +18,11 @@ along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from datamatrix.py3compat import *
-from eyelinkparser._events import sample, fixation, saccade
+from eyelinkparser._events import sample, fixation, saccade, blink
 from eyelinkparser._traceprocessor import defaulttraceprocessor
 from eyelinkparser._eyelinkparser import EyeLinkParser
 
-__version__ = u'0.12.0'
+__version__ = u'0.13.0'
 
 
 def parse(parser=EyeLinkParser, **kwdict):

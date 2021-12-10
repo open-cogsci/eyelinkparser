@@ -34,7 +34,7 @@ except ImportError:
     fastnumbers = None
 import numpy as np
 from datamatrix import DataMatrix, SeriesColumn, operations
-from eyelinkparser import sample, fixation, defaulttraceprocessor
+from eyelinkparser import sample, fixation, blink, defaulttraceprocessor
 
 ANY_VALUE = int, float, basestring
 ANY_VALUES = list, int, float, basestring
@@ -53,7 +53,10 @@ class EyeLinkParser(object):
         trialphase=None,
         edf2asc_binary=u'edf2asc',
         multiprocess=False,
-        asc_encoding=None
+        asc_encoding=None,
+        pupil_size=True,
+        gaze_pos=True,
+        time_trace=True
     ):
 
         """
@@ -133,6 +136,27 @@ class EyeLinkParser(object):
                 desc: >
                         Indicates the character encoding of the `.asc` files,
                         or `None` to use system default.
+            pupil_size:
+                type:   [bool]
+                desc: >
+                        Indicates whether pupil-size traces should be stored.
+                        If enabled, pupil size is stored as `ptrace_[phase]`
+                        columns.
+            gaze_pos:
+                type:   [bool]
+                desc: >
+                        Indicates whether horizontal and vertical gaze-position
+                        traces should be stored. If enabled, gaze position is
+                        stored as `xtrace_[phase]` and `ytrace_[phase]`
+                        columns.
+            time_trace:
+                type:   [bool]
+                desc: >
+                        Indicates whether timestamp traces should be stored,
+                        which indicate the timestamps of the corresponding
+                        pupil and gaze-position traces. If enabled, timestamps
+                        are stored as `ptrace_[phase]`
+                        columns.
         """
 
         self.dm = DataMatrix()
@@ -148,6 +172,9 @@ class EyeLinkParser(object):
         self._trialphase = trialphase
         self._asc_encoding = asc_encoding
         self._temp_files = []
+        self._pupil_size = pupil_size
+        self._gaze_pos = gaze_pos
+        self._time_trace = time_trace
         # Get a list of input files. First, only files in the data folder that
         # match any of the extensions. Then, these files are passed to the
         # converter which may return multiple files, for example if they have
@@ -341,21 +368,31 @@ class EyeLinkParser(object):
         self.fixylist = []
         self.fixstlist = []
         self.fixetlist = []
+        self.blinkstlist = []
+        self.blinketlist = []
         self._t_onset = self.trialdm['t_onset_%s' % self.current_phase] = l[1]
 
     def end_phase(self, l):
 
         self.trialdm['t_offset_%s' % self.current_phase] = l[1]
         for i, (tracelabel, prefix, trace) in enumerate([
-                (u'pupil', u'ptrace_', self.ptrace),
-                (u'xcoor', u'xtrace_', self.xtrace),
-                (u'ycoor', u'ytrace_', self.ytrace),
-                (u'time', u'ttrace_', self.ttrace),
-                (None, u'fixxlist_', self.fixxlist),
-                (None, u'fixylist_', self.fixylist),
-                (None, u'fixstlist_', self.fixstlist),
-                (None, u'fixetlist_', self.fixetlist),
-                ]):
+            (u'pupil', u'ptrace_', self.ptrace),
+            (u'xcoor', u'xtrace_', self.xtrace),
+            (u'ycoor', u'ytrace_', self.ytrace),
+            (u'time', u'ttrace_', self.ttrace),
+            (None, u'fixxlist_', self.fixxlist),
+            (None, u'fixylist_', self.fixylist),
+            (None, u'fixstlist_', self.fixstlist),
+            (None, u'fixetlist_', self.fixetlist),
+            (None, u'blinkstlist_', self.blinkstlist),
+            (None, u'blinketlist_', self.blinketlist),
+        ]):
+            if tracelabel == 'pupil' and not self._pupil_size:
+                continue
+            if tracelabel in ('xcoor', 'ycoor') and not self._gaze_pos:
+                continue
+            if tracelabel == 'time' and not self._time_trace:
+                continue
             trace = np.array(trace, dtype=float)
             if tracelabel is not None and self._traceprocessor is not None:
                 trace = self._traceprocessor(tracelabel, trace)
@@ -369,8 +406,9 @@ class EyeLinkParser(object):
                 len(trace), defaultnan=True)
             self.trialdm[colname][0] = trace
             # Start the time trace at 0
-            if len(trace) and prefix in (u'ttrace_', u'fixstlist_',
-                    u'fixetlist_'):
+            if len(trace) and prefix in ('ttrace_', 'fixstlist_',
+                                         'fixetlist_', 'blinkstlist',
+                                         'blinketlist'):
                 self.trialdm[colname][0] -= self._t_onset
         # DEBUG CODE
         # 	from matplotlib import pyplot as plt
@@ -395,6 +433,11 @@ class EyeLinkParser(object):
         self.fixylist.append(f.y)
         self.fixstlist.append(f.st)
         self.fixetlist.append(f.et)
+        
+    def parse_blink(self, b):
+        
+        self.blinkstlist.append(b.st)
+        self.blinketlist.append(b.et)
 
     def parse_phase(self, l):
 
@@ -420,6 +463,9 @@ class EyeLinkParser(object):
         f = fixation(l)
         if f is not None:
             self.parse_fixation(f)
+        b = blink(l)
+        if b is not None:
+            self.parse_blink(f)
 
     def is_start_trial(self, l):
 

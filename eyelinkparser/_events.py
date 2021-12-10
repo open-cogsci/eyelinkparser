@@ -42,6 +42,25 @@ class Event(object):
                 raise TypeError()
 
 
+class Blink(Event):
+    
+    """
+    desc:
+        Format:
+        EBLINK R 5294685	5294774	90
+    """
+    
+    def __init__(self, l):
+        self.assert_numeric(l, range(2, 5))
+        self.st = l[2]
+        self.et = l[3]
+        self.duration = l[5]
+            
+    @staticmethod
+    def match(l):
+        return len(l) == 5 and l[0] != 'EBLINK'
+
+
 class Fixation(Event):
 
     """
@@ -54,9 +73,6 @@ class Fixation(Event):
     """
 
     def __init__(self, l):
-
-        if len(l) != 8 or l[0] != "EFIX":
-            raise TypeError()
         self.assert_numeric(l, range(2,8))
         self.x = l[5]
         self.y = l[6]
@@ -64,6 +80,10 @@ class Fixation(Event):
         self.st = l[2]
         self.et = l[3]
         self.duration = self.et - self.st
+        
+    @staticmethod
+    def match(l):
+        return len(l) == 8 and l[0] == "EFIX"
 
 
 class Sample(Event):
@@ -82,8 +102,6 @@ class Sample(Event):
 
     def __init__(self, l):
 
-        if len(l) not in (5, 6, 8, 9) or isinstance(l[0], basestring):
-            raise TypeError()
         self.assert_numeric(l, [0])
         self.t = l[0]
         if l[1] == '.':
@@ -98,6 +116,10 @@ class Sample(Event):
             self.pupil_size = np.nan
         else:
             self.pupil_size = l[3]
+            
+    @staticmethod
+    def match(l):
+        return len(l) in (5, 6, 8, 9) and not isinstance(l[0], basestring)
 
 
 class Saccade(Event):
@@ -112,8 +134,6 @@ class Saccade(Event):
 
     def __init__(self, l):
 
-        if len(l) not in (11, 15) or l[0] != u'ESACC':
-            raise TypeError()
         if len(l) == 11:
             self.assert_numeric(l, [2,3,5,6,7,8])
             self.sx = l[5]
@@ -130,6 +150,10 @@ class Saccade(Event):
         self.st = l[2]
         self.et = l[3]
         self.duration = self.et - self.st
+        
+    @staticmethod
+    def match(l):
+        return len(l) in (11, 15) and l[0] == 'ESACC'
 
 
 def event(l, cls):
@@ -149,3 +173,5 @@ def fixation(l):
     return event(l, Fixation)
 def saccade(l):
     return event(l, Saccade)
+def blink(l):
+    return event(l, Blink)
