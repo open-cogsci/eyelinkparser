@@ -465,7 +465,7 @@ class EyeLinkParser(object):
             self.parse_fixation(f)
         b = blink(l)
         if b is not None:
-            self.parse_blink(f)
+            self.parse_blink(b)
 
     def is_start_trial(self, l):
 
