@@ -14,10 +14,14 @@ The `python-eyelinkparser` module provides a framework to parse EyeLink data fil
 pip install python-eyelinkparser
 ```
 
+## Expected format
+
+The parser assumes monocular recording.
+
+
 ## Expected messages
 
-By default, the parser assumes that particular messages are sent to the logfile. If you use different messages, you need to override functions in
-`_eyelinkparser.EyeLinkParser`. This is not explained here, but you can look n the source code to see how it works.
+By default, the parser assumes that particular messages are sent to the logfile. If you use different messages, you need to override functions in `_eyelinkparser.EyeLinkParser`. This is not explained here, but you can look in the source code to see how it works.
 
 Trial start:
 
