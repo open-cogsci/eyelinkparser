@@ -41,7 +41,82 @@ ANY_VALUES = list, int, float, basestring
 
 
 class EyeLinkParser(object):
+    """The main parser class. This is generally not created directly, but
+    through the `eyelinkparser.parse()` function, which takes the same keywords
+    as the `EyeLinkParser` constructor (i.e. the keywords below).
+    
+    Examples
+    --------
+    >>> import eyelinkparser as ep
+    >>> dm = ep.parse(defaulttraceprocessor=ep.defaulttraceprocessor(
+    >>>     blinkreconstruct=True, downsample=True, mode='advanced'))
+    
+    Parameters
+    ----------
+    folder: str, optional
+        The folder that contains .edf or .asc data files, or files compressed
+        as .tar.xz archives.
+    ext: str or tuple, optional 
+        Allowed file extensions, or a tuple of extensions, for data files.
+    downsample: int or None, optional
+        Indicates whether traces (if any) should be downsampled. For example, a
+        value of 10 means that the signal becomes 10 times shorter. Downsample
+        creates a simple traceprocessor, and can therefore not be used in
+        combination with the traceprocessor argument.
+    maxtracelen: int or None, optional
+        A maximum length for traces. Longer traces are truncated and a
+        `UserWarning` is emitted. This length refers to the trace after
+        downsampling/ processing.
+    traceprocessor: callable or None, optional
+        A function that is applied to each trace before the trace is written to
+        the SeriesColumn. This can be used to apply a series of operations that
+        are best done on the raw signal, such as first correcting blinks and
+        then downsampling the signal.
 
+        The function must accept two arguments: first a label for the trace,
+        which is 'pupil', 'xcoor', 'ycoor', or 'time'. This allows the function
+        to distinguish the different kinds of singals; second, the trace
+        itself.
+
+        See `eyelinkparser.defaulttraceprocessor` for a convenience function
+        that applies blink correction and downsampling.
+    trialphase: str or None, optional
+        Indicates the name of a phase that should be automatically started when
+        the trial starts, or `None` when no trial should be automatically
+        started. This is mostly convenient for processing trials that consist
+        of a single long epoch, or when no `start_phase` messages were written
+        to the log file.
+    phasefilter: callable or None, optional
+        A function that receives a phase name as argument, and returns a bool
+        indicating whether that phase should be retained.
+    phasemap: dict, optional
+        A dict in which keys are phase names that are renamed to the associated
+        values. This is mostly useful to merge subsequent traces, in which
+        case the key is the first trace and the value is the second trace.
+    edf2asc_binary: str, optional
+        The name of the edf2asc executable, which if available can be used to
+        automatically convert .edf files to .asc. If not available, the parser
+        can only parse .asc files.
+    multiprocess: bool or int or None, optional
+        Indicates whether each file should be processed in a different process.
+        This can speed up parsing considerably. If not `False`, this should be
+        an int to indicate the number of processes, or None to indicate that
+        the number of processes should be the same as the number of cores.
+    asc_encoding: str or None, optional
+        Indicates the character encoding of the `.asc` files, or `None` to use
+        system default.
+    pupil_size: bool, optional
+        Indicates whether pupil-size traces should be stored. If enabled, pupil
+        size is stored as `ptrace_[phase]` columns.
+    gaze_pos: bool, optional
+        Indicates whether horizontal and vertical gaze-position traces should
+        be stored. If enabled, gaze position is stored as `xtrace_[phase]` and
+        `ytrace_[phase]` columns.
+    time_trace: bool, optional
+        Indicates whether timestamp traces should be stored, which indicate the
+        timestamps of the corresponding pupil and gaze-position traces. If
+        enabled, timestamps are stored as `ptrace_[phase]` columns.
+    """
     def __init__(
         self,
         folder=u'data',
@@ -50,6 +125,7 @@ class EyeLinkParser(object):
         maxtracelen=None,
         traceprocessor=None,
         phasefilter=None,
+        phasemap={},
         trialphase=None,
         edf2asc_binary=u'edf2asc',
         multiprocess=False,
@@ -58,107 +134,6 @@ class EyeLinkParser(object):
         gaze_pos=True,
         time_trace=True
     ):
-
-        """
-        desc:
-            Constructor.
-
-        keywords:
-            folder:
-                type:   str
-                desc:   The folder containing data files
-            ext:
-                type:   str, tuple
-                desc:   The data-file extension, or tuple of extensions.
-            downsample:
-                type:   [int, None]
-                desc: >
-                        Indicates whether traces (if any) should be downsampled.
-                        For example, a value of 10 means that the signal becomes
-                        10 times shorter.
-
-                        Downsample creates a simple traceprocessor, and can
-                        therefore not be used in combination with the
-                        traceprocessor argument.
-            maxtracelen:
-                type:   [int, None]
-                desc:   A maximum length for traces. Longer traces are truncated
-                        and a UserWarning is emitted. This length refers to the
-                        trace after processing.
-            traceprocessor:
-                type:   [callable, None]
-                desc: >
-                        A function that is applied to each trace before the
-                        trace is written to the SeriesColumn. This can be used
-                        to apply a series of operations that are best done on
-                        the raw signal, such as first correcting blinks and then
-                        downsampling the signal.
-
-                        The function must accept two arguments: first a label
-                        for the trace, which is 'pupil', 'xcoor', 'ycoor', or
-                        'time'. This allows the function to distinguish the
-                        different kinds of singals; second, the trace itself.
-
-                        See `eyelinkparser.defaulttraceprocessor` for a
-                        convenience function that applies blink correction and
-                        downsampling.
-            trialphase:
-                type:   [str, None]
-                desc: >
-                        Indicates the name of a phase that should be
-                        automatically started when the trial starts, or `None`
-                        when no trial should be automatically started. This is
-                        mostly convenient for processing trials that consist
-                        of a single long epoch, or when no `start_phase`
-                        messages are written to the log file.
-            phasefilter:
-                type:   [callable,None]
-                desc: >
-                        A function that receives a phase name as argument, and
-                        returns a bool indicating whether that phase should be
-                        retained.
-            edf2asc_binary:
-                type:   str
-                desc: >
-                        The name of the edf2asc executable, which if available
-                        can be used to automatically convert edf files to asc.
-            multiprocess:
-                type:   [bool, int, None]
-                desc: >
-                        Indicates whether each file should be processed in a
-                        different process. This can speed up parsing
-                        considerably. If it's not False, it should be an int to
-                        indicate the number of processes, or None to indicate
-                        that the number of processes should be the same as the
-                        number of cores.
-            asc_encoding:
-                type:   [str, None]
-                desc: >
-                        Indicates the character encoding of the `.asc` files,
-                        or `None` to use system default.
-            pupil_size:
-                type:   [bool]
-                desc: >
-                        Indicates whether pupil-size traces should be stored.
-                        If enabled, pupil size is stored as `ptrace_[phase]`
-                        columns.
-            gaze_pos:
-                type:   [bool]
-                desc: >
-                        Indicates whether horizontal and vertical gaze-position
-                        traces should be stored. If enabled, gaze position is
-                        stored as `xtrace_[phase]` and `ytrace_[phase]`
-                        columns.
-            time_trace:
-                type:   [bool]
-                desc: >
-                        Indicates whether timestamp traces should be stored,
-                        which indicate the timestamps of the corresponding
-                        pupil and gaze-position traces. If enabled, timestamps
-                        are stored as `ptrace_[phase]`
-                        columns.
-        """
-
         self.dm = DataMatrix()
         if downsample is not None:
             if traceprocessor is not None:
@@ -168,6 +143,7 @@ class EyeLinkParser(object):
         self._maxtracelen = maxtracelen
         self._traceprocessor = traceprocessor
         self._phasefilter = phasefilter
+        self._phasemap = phasemap
         self._edf2asc_binary = edf2asc_binary
         self._trialphase = trialphase
         self._asc_encoding = asc_encoding
@@ -347,19 +323,21 @@ class EyeLinkParser(object):
 
     def start_phase(self, l):
 
+        phase = self._phasemap.get(l[3], l[3])
+        if self.current_phase == phase:
+            warnings.warn('Phase "{}" started multiple times'.format(phase))
+            return
         if self.current_phase is not None:
             warnings.warn(
                 u'Phase "%s" started while phase "%s" was still ongoing' \
-                % (l[3], self.current_phase))
+                % (phase, self.current_phase))
             self.end_phase(l)
-        if self._phasefilter is not None and not self._phasefilter(l[3]):
+        if self._phasefilter is not None and not self._phasefilter(phase):
             return
-        self.current_phase = l[3]
+        self.current_phase = phase
         if u'ptrace_%s' % self.current_phase in self.trialdm:
             raise Exception('Phase {} occurs twice (timestamp:{})'.format(
-                self.current_phase,
-                l[1]
-            ))
+                self.current_phase, l[1]))
         self.ptrace = []
         self.xtrace = []
         self.ytrace = []
@@ -448,6 +426,10 @@ class EyeLinkParser(object):
                 self.start_phase(l)
                 return
             if self.match(l, u'MSG', int, (u'end_phase', u'stop_phase'), basestring):
+                # Phases are not ended if they are in the phasemap, because
+                # they should be merged with a subsequent phase.
+                if l[3] in self._phasemap:
+                    return
                 if self.current_phase != l[3]:
                     warnings.warn(u'Trace %s was ended while current phase was %s' \
                         % (l[3], self.current_phase))
