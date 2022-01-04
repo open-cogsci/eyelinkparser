@@ -50,11 +50,7 @@ End of a period of continuous data:
 
 ## Function reference
 
-```python
-import eyelinkparser as ep
-from npdoc_to_md import render_md_from_obj_docstring
-print(render_md_from_obj_docstring(ep.EyeLinkParser, 'eyelinkparser.EyeLinkParser'))
-```
+[API]
 
 
 ## Tutorial

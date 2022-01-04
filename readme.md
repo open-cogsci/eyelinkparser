@@ -50,16 +50,6 @@ End of a period of continuous data:
 
 ## Function reference
 
-
-
-```python
-import eyelinkparser as ep
-from npdoc_to_md import render_md_from_obj_docstring
-print(render_md_from_obj_docstring(ep.EyeLinkParser, 'eyelinkparser.EyeLinkParser'))
-```
-
-__Output:__
-``` .text
 **<span style="color:purple">eyelinkparser.EyeLinkParser</span>_(folder='data', ext=('.asc', '.edf', '.tar.xz'), downsample=None, maxtracelen=None, traceprocessor=None, phasefilter=None, phasemap={}, trialphase=None, edf2asc_binary='edf2asc', multiprocess=False, asc_encoding=None, pupil_size=True, gaze_pos=True, time_trace=True)_**
 
 
@@ -125,9 +115,6 @@ import eyelinkparser as ep
 dm = ep.parse(defaulttraceprocessor=ep.defaulttraceprocessor(
     blinkreconstruct=True, downsample=True, mode='advanced'))
 ```
-```
-
-
 
 
 ## Tutorial
