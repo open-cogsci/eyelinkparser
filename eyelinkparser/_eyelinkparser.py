@@ -353,6 +353,7 @@ class EyeLinkParser(object):
     def end_phase(self, l):
 
         self.trialdm['t_offset_%s' % self.current_phase] = l[1]
+        self.trialdm['trace_length_%s' % self.current_phase] = len(self.ptrace)
         for i, (tracelabel, prefix, trace) in enumerate([
             (u'pupil', u'ptrace_', self.ptrace),
             (u'xcoor', u'xtrace_', self.xtrace),
