@@ -57,7 +57,7 @@ End of a period of continuous data:
 
 For a tutorial about using EyeLinkParser, see:
 
-- <https://datamatrix.cogsci.nl/eyelinkparser/>
+- <https://pydatamatrix.eu/eyelinkparser/>
 
 ## License
 

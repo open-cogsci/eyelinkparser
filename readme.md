@@ -121,7 +121,7 @@ dm = ep.parse(defaulttraceprocessor=ep.defaulttraceprocessor(
 
 For a tutorial about using EyeLinkParser, see:
 
-- <https://datamatrix.cogsci.nl/eyelinkparser/>
+- <https://pydatamatrix.eu/eyelinkparser/>
 
 ## License
 
