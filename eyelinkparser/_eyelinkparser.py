@@ -299,6 +299,11 @@ class EyeLinkParser(object):
             if self.is_message(line):
                 if self.is_end_trial(l):
                     break
+                if self.is_start_trial(l):
+                    warnings.warn('no-end trial detected')
+                    self.redo_line(line)
+                    self.trialid = None
+                    break
                 self.parse_variable(l)
             self.parse_phase(l)
             self.parse_line(l)
@@ -334,7 +339,7 @@ class EyeLinkParser(object):
             self.end_phase(l)
         if self._phasefilter is not None and not self._phasefilter(phase):
             return
-        self.current_phase = phase
+        self.current_phase = safe_decode(phase)
         if u'ptrace_%s' % self.current_phase in self.trialdm:
             raise Exception('Phase {} occurs twice (timestamp:{})'.format(
                 self.current_phase, l[1]))
@@ -423,10 +428,10 @@ class EyeLinkParser(object):
         # For performance only check for start- and end-phase messages if there
         # actually is a message
         if l[0] == 'MSG':
-            if self.match(l, u'MSG', int, (u'start_phase', u'phase'), basestring):
+            if self.match(l, u'MSG', int, (u'start_phase', u'phase'), ANY_VALUE):
                 self.start_phase(l)
                 return
-            if self.match(l, u'MSG', int, (u'end_phase', u'stop_phase'), basestring):
+            if self.match(l, u'MSG', int, (u'end_phase', u'stop_phase'), ANY_VALUE):
                 # Phases are not ended if they are in the phasemap, because
                 # they should be merged with a subsequent phase.
                 if l[3] in self._phasemap:
