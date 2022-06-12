@@ -54,11 +54,11 @@ class Blink(Event):
         self.assert_numeric(l, range(2, 5))
         self.st = l[2]
         self.et = l[3]
-        self.duration = l[5]
+        self.duration = l[4]
             
     @staticmethod
     def match(l):
-        return len(l) == 5 and l[0] != 'EBLINK'
+        return len(l) == 5 and l[0] == 'EBLINK'
 
 
 class Fixation(Event):
@@ -158,6 +158,8 @@ class Saccade(Event):
 
 def event(l, cls):
 
+    if not cls.match(l):
+        return None
     try:
         return cls(l)
     except TypeError:

@@ -329,6 +329,8 @@ class EyeLinkParser(object):
     def start_phase(self, l):
 
         phase = self._phasemap.get(l[3], l[3])
+        if self._phasefilter is not None and not self._phasefilter(phase):
+            return
         if self.current_phase == phase:
             warnings.warn('Phase "{}" started multiple times'.format(phase))
             return
@@ -337,8 +339,6 @@ class EyeLinkParser(object):
                 u'Phase "%s" started while phase "%s" was still ongoing' \
                 % (phase, self.current_phase))
             self.end_phase(l)
-        if self._phasefilter is not None and not self._phasefilter(phase):
-            return
         self.current_phase = safe_decode(phase)
         if u'ptrace_%s' % self.current_phase in self.trialdm:
             raise Exception('Phase {} occurs twice (timestamp:{})'.format(
