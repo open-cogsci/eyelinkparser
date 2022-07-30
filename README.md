@@ -155,3 +155,6 @@ v3](http://www.gnu.org/licenses/gpl-3.0.en.html).
 
 The project layour was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter] template.
 
+[@cjolowicz]: https://github.com/cjolowicz
+[pypi]: https://pypi.org/
+[hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
