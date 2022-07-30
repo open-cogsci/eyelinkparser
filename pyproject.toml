@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -19,7 +19,6 @@ dependencies = [
     "python-datamatrix>=0.13",
     "fastnumbers>=3.0"
 ]
-dynamic = ["version"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
