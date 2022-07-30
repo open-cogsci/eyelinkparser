@@ -5,11 +5,12 @@ jobs:
     docker: # executor type
       - image: cimg/python:3.10 
     steps:
-      - checkout # checkout source code
-      - python/install-packages:
-          pkg-manager: pip
+      - checkout
       - run:
-          name: Run tests
+          name: install
+          command: pip install .
+      - run:
+          name: test
           command: python -m pytest
 
 workflows:
