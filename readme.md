@@ -1,5 +1,27 @@
 # Python EyeLinkParser
 
+[![PyPI](https://img.shields.io/pypi/v/python-eyelinkparser.svg)][pypi_]
+[![Status](https://img.shields.io/pypi/status/python-eyelinkparser.svg)][status]
+[![Python Version](https://img.shields.io/pypi/pyversions/python-eyelinkparser)][python version]
+[![License](https://img.shields.io/pypi/l/python-eyelinkparser)][license]
+
+[![Read the documentation at https://python-eyelinkparser.readthedocs.io/](https://img.shields.io/readthedocs/python-eyelinkparser/latest.svg?label=Read%20the%20Docs)][read the docs]
+[![Tests](https://github.com/maciej.skorski/python-eyelinkparser/workflows/Tests/badge.svg)][tests]
+[![Codecov](https://codecov.io/gh/maciej.skorski/python-eyelinkparser/branch/main/graph/badge.svg)][codecov]
+
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
+
+[pypi_]: https://pypi.org/project/python-eyelinkparser/
+[status]: https://pypi.org/project/python-eyelinkparser/
+[python version]: https://pypi.org/project/python-eyelinkparser
+[read the docs]: https://python-eyelinkparser.readthedocs.io/
+[tests]: https://github.com/maciej.skorski/python-eyelinkparser/actions?workflow=Tests
+[codecov]: https://app.codecov.io/gh/maciej.skorski/python-eyelinkparser
+[pre-commit]: https://github.com/pre-commit/pre-commit
+[black]: https://github.com/psf/black
+
+
 Sebastiaan Mathôt  <br />
 Copyright 2016-2022  <br />
 http://www.cogsci.nl/smathot
@@ -127,3 +149,8 @@ For a tutorial about using EyeLinkParser, see:
 
 `python-eyelinkparser` is licensed under the [GNU General Public License
 v3](http://www.gnu.org/licenses/gpl-3.0.en.html).
+
+## Credits
+
+The project layour was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter] template.
+
