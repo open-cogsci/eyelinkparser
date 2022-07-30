@@ -34,7 +34,7 @@ except ImportError:
     fastnumbers = None
 import numpy as np
 from datamatrix import DataMatrix, SeriesColumn, operations
-from eyelinkparser import sample, fixation, blink, defaulttraceprocessor
+from python_eyelink_parser.eyelinkparser import sample, fixation, blink, defaulttraceprocessor
 
 ANY_VALUE = int, float, basestring
 ANY_VALUES = list, int, float, basestring
