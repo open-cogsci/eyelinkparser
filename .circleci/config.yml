@@ -2,7 +2,8 @@ version: 2.1
 
 jobs:
   build_and_test: # this can be any name you choose
-    executor: python/default # use the default executor defined within the orb
+    docker: # executor type
+      - image: cimg/python:3.10 
     steps:
       - checkout # checkout source code
       - python/install-packages:
@@ -10,3 +11,8 @@ jobs:
       - run:
           name: Run tests
           command: python -m pytest
+
+workflows:
+  main:
+    jobs:
+      - build_and_test
