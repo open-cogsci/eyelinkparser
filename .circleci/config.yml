@@ -8,7 +8,9 @@ jobs:
       - checkout
       - run:
           name: install
-          command: pip install .
+          command: |
+            pip install .
+            pip install pytest
       - run:
           name: test
           command: python -m pytest
