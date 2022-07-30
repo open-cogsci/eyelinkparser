@@ -18,9 +18,9 @@ along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from datamatrix.py3compat import *
-from eyelinkparser._events import sample, fixation, saccade, blink
-from eyelinkparser._traceprocessor import defaulttraceprocessor
-from eyelinkparser._eyelinkparser import EyeLinkParser
+from python_eyelink_parser.eyelinkparser._events import sample, fixation, saccade, blink
+from python_eyelink_parser.eyelinkparser._traceprocessor import defaulttraceprocessor
+from python_eyelink_parser.eyelinkparser._eyelinkparser import EyeLinkParser
 
 __version__ = u'0.17.0'
 
