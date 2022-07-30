@@ -1,0 +1,14 @@
+{
+  "_output_dir": "/home/ubuntu/projects/eyelinkparser",
+  "_template": "gh:cjolowicz/cookiecutter-hypermodern-python",
+  "author": "Maciej Skorski",
+  "copyright_year": "2022",
+  "development_status": "Development Status :: 2 - Pre-Alpha",
+  "email": "maciej.skorski@gmail.com",
+  "friendly_name": "Python Eyelink Parser",
+  "github_user": "maciej.skorski",
+  "license": "MIT",
+  "package_name": "python-eyelink-parser",
+  "project_name": "python-eyelinkparser",
+  "version": "0.0.0"
+}
