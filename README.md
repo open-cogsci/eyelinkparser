@@ -15,6 +15,7 @@
 [pypi_]: https://pypi.org/project/python-eyelinkparser/
 [status]: https://pypi.org/project/python-eyelinkparser/
 [python version]: https://pypi.org/project/python-eyelinkparser
+[license]: https://pypi.org/project/python-eyelinkparser
 [read the docs]: https://python-eyelinkparser.readthedocs.io/
 [tests]: https://github.com/maciej.skorski/python-eyelinkparser/actions?workflow=Tests
 [codecov]: https://app.codecov.io/gh/maciej.skorski/python-eyelinkparser
