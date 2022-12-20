@@ -97,11 +97,10 @@ class EyeLinkParser(object):
         The name of the edf2asc executable, which if available can be used to
         automatically convert .edf files to .asc. If not available, the parser
         can only parse .asc files.
-    multiprocess: bool or int or None, optional
+    multiprocess: bool or int, optional
         Indicates whether each file should be processed in a different process.
         This can speed up parsing considerably. If not `False`, this should be
-        an int to indicate the number of processes, or None to indicate that
-        the number of processes should be the same as the number of cores.
+        an int to indicate the number of processes.
     asc_encoding: str or None, optional
         Indicates the character encoding of the `.asc` files, or `None` to use
         system default.
@@ -166,11 +165,17 @@ class EyeLinkParser(object):
             )
         ))
         if multiprocess:
-            import multiprocessing as mp
-            with mp.Pool(multiprocess) as p:
-                filedms = p.map(self.parse_file, input_files)
-            while filedms:
-                self.dm <<= filedms.pop()
+            # Use the much faster stack_multiprocessing() routine if it's
+            # available. Requires DataMatrix >= 1.0
+            if hasattr(operations, 'stack_multiprocessing'):
+                self.dm = operations.stack_multiprocessing(
+                    self.parse_file, input_files, processes=multiprocess)
+            else:
+                import multiprocessing as mp
+                with mp.Pool(multiprocess) as p:
+                    filedms = p.map(self.parse_file, input_files)
+                while filedms:
+                    self.dm <<= filedms.pop()
         else:
             for fname in input_files:
                 self.dm <<= self.parse_file(fname)
@@ -242,12 +247,12 @@ class EyeLinkParser(object):
 
         logging.info(u'parsing {}'.format(path))
         path = self.edf2asc(path)
-        self.filedm = DataMatrix()
         self.trialid = None
         self.path = path
         self.on_start_file()
         ntrial = 0
         self._linestack = []
+        trialdms = []
         with open(path, encoding=self._asc_encoding) as f:
             for line in self.stacked_file(f):
                 # Only messages can be start-trial messages, so performance we
@@ -257,7 +262,16 @@ class EyeLinkParser(object):
                 if self.is_start_trial(self.split(line)):
                     ntrial += 1
                     self.print_(u'.')
-                    self.filedm <<= self.parse_trial(f)
+                    trialdms.append(self.parse_trial(f))
+        # Use the much faster stack() routine if it's available. Requires
+        # DataMatrix >= 1.0
+        if hasattr(operations, 'stack'):
+            self.filedm = operations.stack(trialdms)
+        else:
+            logger.warning('updating to DataMatrix >= 1.0 will be much faster')
+            self.filedm = DataMatrix()
+            for trialdm in trialdms:
+                self.filedm <<= trialdm
         self.on_end_file()
         logging.info(u' ({} trials)\n'.format(ntrial))
         # Force garbage collection. Without it, memory seems to fill
