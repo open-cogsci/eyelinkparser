@@ -549,8 +549,12 @@ class EyeLinkParser(object):
 
         if path not in self._temp_files:
             return
-        os.remove(path)
-        logging.info('deleting temporary file {}'.format(path))
+        try:
+            os.remove(path)
+        except Exception as e:
+            logging.warning('failed to delete temporary file {}'.format(e))
+        else:
+            logging.info('deleted temporary file {}'.format(path))
         self._temp_files.remove(path)
 
     def _register_temp_file(self, path):
