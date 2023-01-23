@@ -22,7 +22,7 @@ from eyelinkparser._events import sample, fixation, saccade, blink
 from eyelinkparser._traceprocessor import defaulttraceprocessor
 from eyelinkparser._eyelinkparser import EyeLinkParser
 
-__version__ = u'0.17.3'
+__version__ = u'0.17.4'
 
 
 def parse(parser=EyeLinkParser, **kwdict):

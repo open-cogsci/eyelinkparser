@@ -1,0 +1,19 @@
+[build-system]
+requires = ["flit_core >=3.4"]
+build-backend = "flit_core.buildapi"
+[project]
+name = "eyelinkparser"
+authors = [
+    {name = "Sebastiaan Mathôt", email = "s.mathot@cogsci.nl"}
+]
+readme = "readme.md"
+license = {file = "COPYING"}
+requires-python = ">=3.7"
+dynamic = ["version", "description"]
+dependencies = ["datamatrix", "fastnumbers"]
+keywords = ["data analysis", "eye tracking", "eyelink"]
+[tool.flit.sdist]
+exclude = [".github"]
+[project.urls]
+Documentation = "https://github.com/open-cogsci/eyelinkparser"
+Source = "https://github.com/open-cogsci/eyelinkparser"

@@ -11,7 +11,7 @@ The `python-eyelinkparser` module provides a framework to parse EyeLink data fil
 ## Installation
 
 ```
-pip install python-eyelinkparser
+pip install eyelinkparser
 ```
 
 ## Expected format
