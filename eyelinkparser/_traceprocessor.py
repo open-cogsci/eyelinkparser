@@ -21,17 +21,23 @@ from datamatrix.py3compat import *
 import functools
 from datamatrix import series as srs
 
+from matplotlib import pyplot as plt
 
 def _fnc(label, trace, blinkreconstruct, downsample, mode):
 
     if label == 'pupil' and blinkreconstruct:
         try:
-            trace = srs._blinkreconstruct(trace, mode=mode)
+
+            trace, bl = srs._blinkreconstruct(trace, mode=mode)
+            return trace, bl
+        
         except TypeError:
             warn('blinkreconstruct does not support mode keyword. '
                  'Please update datamatrix.')
+            
     if downsample is not None:
         trace = srs._downsample(trace, downsample)
+    
     return trace
 
 

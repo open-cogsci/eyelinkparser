@@ -246,6 +246,7 @@ class EyeLinkParser(object):
     def parse_file(self, path):
 
         logging.info(u'parsing {}'.format(path))
+        self.print_(path)
         path = self.edf2asc(path)
         self.trialid = None
         self.path = path
@@ -393,7 +394,19 @@ class EyeLinkParser(object):
                 continue
             trace = np.array(trace, dtype=float)
             if tracelabel is not None and self._traceprocessor is not None:
-                trace = self._traceprocessor(tracelabel, trace)
+
+                # when dealing with pupil, we also get a blink list bl that we store
+                if tracelabel == 'pupil':
+                    trace, bl = self._traceprocessor(tracelabel, trace)
+                    stname = 'ELPblinkstlist_' + self.current_phase
+                    etname = 'ELPblinketlist_' + self.current_phase
+                    self.trialdm[stname] = SeriesColumn(len(bl), defaultnan=True)
+                    self.trialdm[stname][0] = [i[0] for i in bl]
+                    self.trialdm[etname] = SeriesColumn(len(bl), defaultnan=True)
+                    self.trialdm[etname][0] = [i[1] for i in bl]
+                else:
+                    trace = self._traceprocessor(tracelabel, trace)
+
             if self._maxtracelen is not None \
                 and len(trace) > self._maxtracelen:
                     warnings.warn(u'Trace %s is too long (%d samples)' \
@@ -405,8 +418,8 @@ class EyeLinkParser(object):
             self.trialdm[colname][0] = trace
             # Start the time trace at 0
             if len(trace) and prefix in ('ttrace_', 'fixstlist_',
-                                         'fixetlist_', 'blinkstlist',
-                                         'blinketlist'):
+                                         'fixetlist_', 'blinkstlist_',
+                                         'blinketlist_'):
                 self.trialdm[colname][0] -= self._t_onset
         # DEBUG CODE
         # 	from matplotlib import pyplot as plt
