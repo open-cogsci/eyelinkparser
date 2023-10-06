@@ -268,7 +268,8 @@ class EyeLinkParser(object):
         if hasattr(operations, 'stack'):
             self.filedm = operations.stack(trialdms)
         else:
-            logger.warning('updating to DataMatrix >= 1.0 will be much faster')
+            logging.warning(
+                'updating to DataMatrix >= 1.0 will be much faster')
             self.filedm = DataMatrix()
             for trialdm in trialdms:
                 self.filedm <<= trialdm
