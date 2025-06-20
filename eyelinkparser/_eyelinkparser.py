@@ -16,8 +16,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from datamatrix.py3compat import *
 import gc
 import math
 import sys
@@ -36,8 +34,8 @@ import numpy as np
 from datamatrix import DataMatrix, SeriesColumn, operations
 from eyelinkparser import sample, fixation, blink, defaulttraceprocessor
 
-ANY_VALUE = int, float, basestring
-ANY_VALUES = list, int, float, basestring
+ANY_VALUE = int, float, str
+ANY_VALUES = list, int, float, str
 
 
 class EyeLinkParser(object):
@@ -160,7 +158,7 @@ class EyeLinkParser(object):
             for fname in sorted(os.listdir(folder))
             if (
                 fname.lower().endswith(ext.lower())
-                if isinstance(ext, basestring)
+                if isinstance(ext, str)
                 else any(fname.lower().endswith(e.lower()) for e in ext)
             )
         ))
@@ -333,10 +331,10 @@ class EyeLinkParser(object):
     def parse_variable(self, l):
 
         # MSG	6740629 var rt 805
-        if not self.match(l, u'MSG', int, u'var', basestring, ANY_VALUES):
+        if not self.match(l, u'MSG', int, u'var', str, ANY_VALUES):
             return
         var = l[3]
-        val = u' '.join([safe_decode(i) for i in l[4:]])
+        val = u' '.join([str(i) for i in l[4:]])
         if var in self.trialdm:
             warnings.warn(u'Variable "%s" defined twice in one trial' % var)
         self.trialdm[var] = val
@@ -354,7 +352,7 @@ class EyeLinkParser(object):
                 u'Phase "%s" started while phase "%s" was still ongoing' \
                 % (phase, self.current_phase))
             self.end_phase(l)
-        self.current_phase = safe_decode(phase)
+        self.current_phase = str(phase)
         if u'ptrace_%s' % self.current_phase in self.trialdm:
             raise Exception('Phase {} occurs twice (timestamp:{})'.format(
                 self.current_phase, l[1]))

@@ -19,7 +19,6 @@ along with datamatrix.  If not, see <http://www.gnu.org/licenses/>.
 
 import warnings
 import numbers
-from datamatrix.py3compat import *
 import numpy as np
 try:
     import fastnumbers
@@ -119,7 +118,7 @@ class Sample(Event):
             
     @staticmethod
     def match(l):
-        return len(l) in (5, 6, 8, 9) and not isinstance(l[0], basestring)
+        return len(l) in (5, 6, 8, 9) and not isinstance(l[0], str)
 
 
 class Saccade(Event):
@@ -165,8 +164,7 @@ def event(l, cls):
     except TypeError:
         pass
     except Exception as e:
-        warnings.warn(
-            u'Unexpected exception during parsing of %s' % safe_decode(e))
+        warnings.warn(f'Unexpected exception during parsing of {e}')
 
 
 def sample(l):
