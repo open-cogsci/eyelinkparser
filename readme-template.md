@@ -1,7 +1,7 @@
 # Python EyeLinkParser
 
 Sebastiaan Mathôt and contributors <br />
-Copyright 2016-2023  <br />
+Copyright 2016-2025  <br />
 http://www.cogsci.nl/smathot
 
 ## About
