@@ -1,17 +1,20 @@
 # Python EyeLinkParser
 
 Sebastiaan Mathôt and contributors <br />
-Copyright 2016-2023  <br />
+Copyright 2016-2024  <br />
 http://www.cogsci.nl/smathot
 
 ## About
 
-The `python-eyelinkparser` module provides a framework to parse EyeLink data files in `.asc` format, that is, the format that you get after converting an `.edf` file with `edf2asc`. This module is mostly for personal use, and is not very well documented.
+The `eyelinkparser` module provides a framework to parse EyeLink data files in `.asc` format, that is, the format that you get after converting an `.edf` file with `edf2asc`. This module is mostly for personal use, and is not very well documented.
+
+This package also contains experimental parsers for other eye trackers, which work in the same way except that you import from a different top-level package: `gazepointparser`, `eyetribeparser`, and `smiparser`. These packages are largely untested and may be broken.
+
 
 ## Installation
 
 ```
-pip install eyelinkparser
+pip install eyelinkparser 
 ```
 
 ## Expected format

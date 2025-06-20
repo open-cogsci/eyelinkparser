@@ -12,6 +12,10 @@ requires-python = ">=3.7"
 dynamic = ["version", "description"]
 dependencies = ["datamatrix", "fastnumbers"]
 keywords = ["data analysis", "eye tracking", "eyelink"]
+[tool.flit.module]
+name = "eyelinkparser"
+[tool.flit.packages]
+include = ["gazepointparser", "eyetribeparser", "smiparser"]
 [tool.flit.sdist]
 exclude = [".github"]
 [project.urls]
